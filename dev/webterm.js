@@ -51,7 +51,7 @@ window.addEventListener('focus', setFocus)
 readCWD()
 updatePrompt()
 importEnvironment()
-appendOutput(html`<div><strong>Welcome to webterm.</strong> Type <code>help</code> if you get lost.</div>`, cwd.pathname)
+appendOutput(html`<div><strong>Welcome to webterm.</strong> Type <code>help</code> if you get lost.</div>`)
 setFocus()
 
 // output
@@ -65,13 +65,17 @@ function appendOutput (output, thenCWD, cmd) {
   } else if (typeof output !== 'string' && !(output instanceof Element)) {
     output = JSON.stringify(output).replace(/^"|"$/g, '')
   }
+
+  var entry = html`<div class="entry"></div>`
+  var showPrompt = !!thenCWD
   thenCWD = thenCWD || cwd
-  document.querySelector('.output').appendChild(html`
-    <div class="entry">
-      <div class="entry-header">//${shortenHash(thenCWD.host)}${thenCWD.pathname}${gt()} ${cmd || ''}</div>
-      <div class="entry-content">${output}</div>
-    </div>
-  `)
+
+  if (showPrompt) {
+    entry.appendChild(html`<div class="entry-header">//${shortenHash(thenCWD.host)}${thenCWD.pathname}${gt()} ${cmd || ''}</div>`)
+  }
+  entry.appendChild(html`<div class="entry-content">${output}</div>`)
+
+  document.querySelector('.output').appendChild(entry)
   window.scrollTo(0, document.body.scrollHeight)
 }
 
