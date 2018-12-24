@@ -184,9 +184,11 @@ function parseCommand (str) {
 // =
 
 async function importEnvironment () {
-  document.head.append(html`<link rel="stylesheet" href="/dev/theme-default.css" />`)
+  var wt = new URL(import.meta.url)
+
+  document.head.append(html`<link rel="stylesheet" href="${wt.origin}/dev/theme-default.css" />`)
   try {
-    var module = await importModule('/dev/env-default.js')
+    var module = await importModule(wt.origin + '/dev/env-default.js')
     env = Object.assign({}, module)
     for (let k in builtins) {
       Object.defineProperty(env, k, {value: builtins[k], enumerable: false})
