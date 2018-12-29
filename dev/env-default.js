@@ -22,12 +22,13 @@ export function help () {
   return {
     toHTML() {
       var longestMethod = METHOD_HELP.reduce((acc, v) => Math.max(acc, v.name.length), 0)
-      return METHOD_HELP.map(method => {
+      var lines = METHOD_HELP.map(method => {
         var nSpaces = longestMethod + 2 - method.name.length
         var methodEl = env.html`<span>${method.name}</span>`
         methodEl.innerHTML += '&nbsp;'.repeat(nSpaces)
         return env.html`<div class="text-default">${methodEl} <span class="text-muted">${method.description || ''}</span></div>`
       })
+      return env.html`<div>${lines}</div>`
     }
   }
 }
