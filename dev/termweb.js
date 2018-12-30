@@ -50,7 +50,10 @@ function appendOutput (out) {
 async function evalCommand (msg) {
   try {
     var command = msg.data.toString().trim()
-    var res = await eval(parseCommand(command))
+    var {cmd, args} = parseCommand(command)
+
+    var js = `env.${cmd}(${args})`
+    var res = await eval(js)
     appendOutput(res)
   } catch (err) {
     appendError(err)

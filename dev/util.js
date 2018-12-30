@@ -17,15 +17,16 @@ export function noop () {}
 export function parseCommand (str) {
   // parse the command
   var parts = str.split(' ')
-  var cmd = parts[0]
-  var argsParsed = minimist(parts.slice(1))
+  var cmd = parts.shift()
 
-  // form the js call
-  var args = argsParsed._
-  delete argsParsed._
-  args.unshift(argsParsed) // opts always go first
+  // form the args string
+  var opts = minimist(parts)
+  var argList = opts._
+  delete opts._
+  argList.unshift(opts) // opts always go first
+  var args = argList.map(JSON.stringify).join(', ')
 
-  return `env.${cmd}(${args.map(JSON.stringify).join(', ')})`
+  return {cmd, args}
 }
 
 export function parseURL (url) {
