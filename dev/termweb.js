@@ -2,20 +2,36 @@ import * as env from './env-default.js'
 import hast from './vendor/hastscript-v5.0.0.js'
 import hyperx from './vendor/hyperx-v2.5.0.js'
 import visit from './vendor/unist-util-visit-v1.4.0.js'
-import {noop, parseCommand} from './util.js'
+import {joinPath, noop, parseCommand, parseURL} from './util.js'
 
-var builtins = {
-  html: hyperx(hast),
-  morph: noop,
-  evalCommand: evalCommand,
-  getCWD: () => Object.create(null),
-  setCWD: noop
+bootstrap()
+
+/**
+ * Initialisation logic:
+ */
+async function bootstrap () {
+  var archive = await DatArchive.create()
+  var builtins = {
+    html: hyperx(hast),
+    morph: noop,
+    evalCommand: evalCommand,
+    getCWD: () => parseURL(window.location.toString()),
+    setCWD: dst => {
+      window.location.pathname = joinPath(window.location.pathname, dst)
+    }
+  }
+
+  window.env = Object.assign(builtins, env)
+  window.location = new URL(archive.url)
+  window.onmessage = evalCommand
+
+  appendOutput(archive.url)
+  updatePrompt()
 }
 
-window.env = Object.assign(builtins, env)
-window.onmessage = evalCommand
-setTimeout(updatePrompt)
-
+/**
+ * Terminal methods:
+ */
 function appendError (err) {
   console.error(err)
 }

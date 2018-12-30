@@ -27,3 +27,10 @@ export function parseCommand (str) {
 
   return `env.${cmd}(${args.map(JSON.stringify).join(', ')})`
 }
+
+export function parseURL (url) {
+  if (!url.startsWith('dat://')) url = 'dat://' + url
+  let urlp = new URL(url)
+  let archive = new DatArchive(urlp.hostname)
+  return {url, host: urlp.hostname, pathname: urlp.pathname || '/', archive}
+}

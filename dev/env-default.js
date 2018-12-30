@@ -54,7 +54,7 @@ export async function ls (opts = {}, location = '') {
   }
 
   // render
-  listing.toHTML = () => listing
+  listing.toHTML = () => env.html`<div>${listing
     .filter(entry => {
       if (entry.name === '..' || opts.all || opts.a) {
         return true
@@ -94,6 +94,7 @@ export async function ls (opts = {}, location = '') {
           </${tag}>
         </div>`
     })
+  }</div>`
 
   return listing
 }
