@@ -2,7 +2,7 @@ import * as env from './env-default.js'
 import hast from './vendor/hastscript-v5.0.0.js'
 import hyperx from './vendor/hyperx-v2.5.0.js'
 import visit from './vendor/unist-util-visit-v1.4.0.js'
-import {joinPath, noop, parseCommand, parseURL} from './util.js'
+import {joinPath, parseCommand, parseURL} from './util.js'
 
 bootstrap()
 
@@ -13,7 +13,7 @@ async function bootstrap () {
   var archive = await DatArchive.create()
   var builtins = {
     html: hyperx(hast),
-    morph: noop,
+    morph: function () {},
     evalCommand: evalCommand,
     getCWD: () => parseURL(window.location.toString()),
     setCWD: dst => {

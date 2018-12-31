@@ -12,8 +12,6 @@ export function joinPath (left, right) {
   return left + right
 }
 
-export function noop () {}
-
 export function parseCommand (str) {
   // parse the command
   var parts = str.split(' ')
