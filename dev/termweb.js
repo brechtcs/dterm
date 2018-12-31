@@ -10,7 +10,11 @@ bootstrap()
  * Initialisation logic:
  */
 async function bootstrap () {
-  var archive = await DatArchive.create()
+  var params = new URL(import.meta.url).searchParams
+  var archive = params.get('dat')
+    ? await DatArchive.load(`dat://${params.get('dat')}`)
+    : await DatArchive.create()
+
   var builtins = {
     html: hyperx(hast),
     morph: function () {},
