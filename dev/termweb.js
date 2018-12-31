@@ -11,8 +11,9 @@ bootstrap()
  */
 async function bootstrap () {
   var params = new URL(import.meta.url).searchParams
-  var archive = params.get('dat')
-    ? await DatArchive.load(`dat://${params.get('dat')}`)
+  var home = params.get('home') || localStorage.getItem('HOME_DAT')
+  var archive = home
+    ? await DatArchive.load(`dat://${home}`)
     : await DatArchive.create()
 
   var builtins = {
@@ -28,6 +29,7 @@ async function bootstrap () {
   window.env = Object.assign(builtins, env)
   window.location = new URL(archive.url)
   window.onmessage = evalCommand
+  localStorage.setItem('HOME_DAT', window.location.host)
 
   appendOutput(archive.url)
   updatePrompt()
