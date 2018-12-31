@@ -24,8 +24,7 @@ export function help () {
       var longestMethod = METHOD_HELP.reduce((acc, v) => Math.max(acc, v.name.length), 0)
       var lines = METHOD_HELP.map(method => {
         var nSpaces = longestMethod + 2 - method.name.length
-        var methodEl = env.html`<span>${method.name}</span>`
-        methodEl.innerHTML += '&nbsp;'.repeat(nSpaces)
+        var methodEl = env.html`<span>${method.name}${'&nbsp;'.repeat(nSpaces)}</span>`
         return env.html`<div class="text-default">${methodEl} <span class="text-muted">${method.description || ''}</span></div>`
       })
       return env.html`<div>${lines}</div>`
@@ -125,7 +124,7 @@ export function pwd () {
 // folder manipulation
 // =
 
-export async function mkdir (opts, dst) { 
+export async function mkdir (opts, dst) {
   if (!dst) throw new Error('dst is required')
   const cwd = env.getCWD()
   dst = toCWDLocation(dst)
@@ -168,7 +167,7 @@ export async function rm (opts, dst) {
   if (!dst) throw new Error('dst is required')
   const cwd = env.getCWD()
   dst = toCWDLocation(dst)
-  await cwd.archive.unlink(dst)  
+  await cwd.archive.unlink(dst)
 }
 
 // utilities

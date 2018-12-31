@@ -1,7 +1,6 @@
 import * as env from './env-default.js'
-import hast from './vendor/hastscript-v5.0.0.js'
-import hyperx from './vendor/hyperx-v2.5.0.js'
-import visit from './vendor/unist-util-visit-v1.4.0.js'
+import dedent from './vendor/dedent-v0.7.0.js'
+import hermit from './vendor/hermit-v0.2.2.js'
 import {joinPath, parseCommand, parseURL} from './util.js'
 
 bootstrap()
@@ -17,7 +16,7 @@ async function bootstrap () {
     : await DatArchive.create()
 
   var builtins = {
-    html: hyperx(hast),
+    html: dedent,
     morph: function () {},
     evalCommand: evalCommand,
     getCWD: () => parseURL(window.location.toString()),
@@ -46,8 +45,10 @@ function appendOutput (out) {
   if (typeof out === 'undefined') {
     console.log('Ok.')
   } else if (typeof out.toHTML === 'function') {
-    var tree = out.toHTML()
-    visit(tree, 'text', node => console.log(node.value))
+    hermit(out.toHTML(), (err, res) => {
+      if (err) appendError(err)
+      else window.postMessage(`${res}\n`)
+    })
   } else {
     console.log(out)
   }
