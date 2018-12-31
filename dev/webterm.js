@@ -2,7 +2,7 @@ import html from './vendor/nanohtml-v1.2.4.js'
 import morph from './vendor/nanomorph-v5.1.3.js'
 import minimist from './vendor/minimist-v1.2.0.js'
 import {importModule} from './vendor/dynamic-import-polyfill.js'
-import {joinPath} from './util.js'
+import {joinPath, parseCommand, parseURL} from './util.js'
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor
 
 // globals
@@ -169,17 +169,6 @@ async function evalCommand (command) {
   updatePrompt()
 }
 
-function parseCommand (str) {
-  var parts = str.split(' ')
-  var cmd = parts.shift()
-
-  var opts = minimist(parts)
-  var args = opts._
-  delete opts._
-
-  return {cmd, args, opts}
-}
-
 // environment
 // =
 
@@ -230,15 +219,6 @@ function readCWD () {
 
   console.log('CWD', cwd)
   document.title = `${cwd.host || cwd.url} | Terminal`
-}
-
-function parseURL (url) {
-  if (!url.startsWith('dat://')) url = 'dat://' + url
-  let urlp = new URL(url)
-  let host = url.slice(0, url.indexOf('/'))
-  let pathname = url.slice(url.indexOf('/'))
-  let archive = new DatArchive(urlp.hostname)
-  return {url, host: urlp.hostname, pathname: urlp.pathname, archive}
 }
 
 // builtins
