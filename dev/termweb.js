@@ -53,12 +53,19 @@ function appendOutput (out) {
 
 async function evalCommand (msg) {
   try {
-    var js
+    var js, module
     var command = msg.data.toString().trim()
     var {cmd, args, opts} = parseCommand(command)
 
+    if (cmd in env) {
+      cmd = `env.${cmd}`
+    } else {
+      module = await import(joinPath(env.pwd(), `${cmd}.js`))
+      cmd = `module.${module[args[0]] ? args.shift() : 'default'}`
+    }
+
     args.unshift(opts) // opts always go first
-    js = `env.${cmd}(${args.map(JSON.stringify).join(', ')})`
+    js = `${cmd}(${args.map(JSON.stringify).join(', ')})`
 
     var res = await eval(js)
     appendOutput(res)
