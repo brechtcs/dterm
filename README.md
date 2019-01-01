@@ -2,12 +2,11 @@
 
 Distributed Terminal. Provides power users with a familiar toolset for browsing and creating on the distributed web. Forked from [Webterm](https://github.com/pfrazee/webterm).
 
-## Todos
+Try it in [Beaker Browser](https://beakerbrowser.com):
 
- - Add the user root archive
- - Load the terminal environment from files in the user root
- - More builtin commands
- - Terminal autocomplete
+```
+dat://dterm.hashbase.io/
+```
 
 ## Example commands
 
