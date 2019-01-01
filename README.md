@@ -1,48 +1,13 @@
-# Webterm
+# Dterm
 
-The Web Terminal provides power users with a familiar toolset for examining the system. For more background information, [read this blog post](http://pfrazee.github.io/blog/reimagining-the-browser-as-a-network-os).
-
-This is a work in progress.
+Distributed Terminal. Provides power users with a familiar toolset for browsing and creating on the distributed web. Forked from [Webterm](https://github.com/pfrazee/webterm).
 
 ## Todos
 
- - Create the program execution sandbox
- - Create the program RPC system
  - Add the user root archive
  - Load the terminal environment from files in the user root
- - Check that the destination exists before doing a CD
  - More builtin commands
- - History scrolling
  - Terminal autocomplete
-
-## Objectives
-
-The "CLI" refers to the command-line interface (the UI and environment).
-
- - **The CLI SHOULD** support autocomplete, history, theming.
- - **The CLI SHOULD** employ a bashlike syntax which translates predictably to JS function invocations.
- - **The CLI SHOULD** use trusted UIs to confirm changes to the system. Password prompts should not be required.
- - **The CLI SHOULD NOT** allow the execution of untrusted Javascript in its context.
-
-"Commands" refer to the userspace programs which are executed by the CLI.
-
- - **Commands SHOULD** be executed in an isolated process, and communicate with the browser via IPC.
- - **Commands SHOULD** provide behaviors by interacting with the APIs provided by the browser.
- - **Commands SHOULD** be composable using sub-invocations.
- - **Commands SHOULD NOT** be able to invoke other commands.
- - **Commands SHOULD** render their output to the CLI using HTML.
- - **Commands SHOULD NOT** be able to provide custom JS or CSS for their HTML output.
- - **Commands SHOULD** be easily installable and managed (similar to `npm install -g {command}` but with better management).
- - **Commands SHOULD** be invocable from secure URLs, without prior installation (similar to `wget <url> | bash`).
- - **Commands SHOULD** have a simple JS programming model which auto hydrates the execution environment and abstracts away all IPC.
-
-### Explaining the objectives
-
-WebTerm is designed to be conservative in what it can express or compute. It should only invoke Javascript commands, which then execute against the browser's Web APIs.
-
-**We define elegance as simplicity, not power.**
-
-WebTerm's invocation syntax should be simple and obvious, and limit the number of edge-cases possible. Any "programming" should occur inside of a Javascript command. (The exact definition of "simple" will evolve as we understand the environment better. If conditionals or function definitions arrive in the shell language, then something has gone wrong.)
 
 ## Example commands
 
