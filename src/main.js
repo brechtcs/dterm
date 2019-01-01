@@ -2,8 +2,7 @@ import html from './vendor/nanohtml-v1.2.4.js'
 import morph from './vendor/nanomorph-v5.1.3.js'
 import minimist from './vendor/minimist-v1.2.0.js'
 import {importModule} from './vendor/dynamic-import-polyfill.js'
-import {joinPath, parseCommand, parseURL} from './util.js'
-const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor
+import {joinPath, parseCommand, parseURL} from './common.js'
 
 // globals
 // =
@@ -175,9 +174,9 @@ async function evalCommand (command) {
 async function importEnvironment () {
   var wt = new URL(import.meta.url)
 
-  document.head.append(html`<link rel="stylesheet" href="${wt.origin}/dev/theme-default.css" />`)
+  document.head.append(html`<link rel="stylesheet" href="${wt.origin}/assets/theme.css" />`)
   try {
-    var module = await importModule(wt.origin + '/dev/env-default.js')
+    var module = await importModule(wt.origin + '/dev/env.js')
     env = Object.assign({}, module)
     for (let k in builtins) {
       Object.defineProperty(env, k, {value: builtins[k], enumerable: false})

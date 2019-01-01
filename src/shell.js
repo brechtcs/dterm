@@ -1,7 +1,7 @@
-import * as env from './env-default.js'
+import * as env from './env.js'
 import dedent from './vendor/dedent-v0.7.0.js'
 import hermit from './vendor/hermit-v0.2.2.js'
-import {joinPath, parseCommand, parseURL} from './util.js'
+import {joinPath, parseCommand, parseURL} from './common.js'
 
 bootstrap()
 
