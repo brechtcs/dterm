@@ -176,7 +176,7 @@ async function importEnvironment () {
 
   document.head.append(html`<link rel="stylesheet" href="${wt.origin}/assets/theme.css" />`)
   try {
-    var module = await importModule(wt.origin + '/dev/env.js')
+    var module = await importModule(wt.origin + '/src/env.js')
     env = Object.assign({}, module)
     for (let k in builtins) {
       Object.defineProperty(env, k, {value: builtins[k], enumerable: false})
