@@ -170,6 +170,19 @@ export async function rm (opts, dst) {
   await cwd.archive.unlink(dst)
 }
 
+// command management
+// =
+
+export async function install (opts, cmd, url) {
+  if (!cmd) throw new Error('cmd is required')
+  url = url || joinPath(env.getCWD().url, `${cmd}.js`)
+  var urlp = new URL(url)
+  var dat = await DatArchive.load(urlp.host)
+  var stat = await dat.stat(urlp.pathname)
+  if (stat.isDirectory()) throw new Error('command can not be loaded from directory')
+  localStorage.setItem(`cmd/${cmd}`, url)
+}
+
 // utilities
 // =
 
