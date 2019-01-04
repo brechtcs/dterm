@@ -184,6 +184,13 @@ export async function install (opts, cmd, url) {
   localStorage.setItem(`cmd/${cmd}`, url)
 }
 
+export function which (opts, cmd) {
+  var installed = localStorage.getItem(`cmd/${cmd}`)
+  if (installed) return installed
+  if (cmd in this) return import.meta.url
+  throw new Error('command not found')
+}
+
 // utilities
 // =
 
