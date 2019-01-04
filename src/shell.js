@@ -59,11 +59,17 @@ async function evalCommand (msg) {
     var js, module
     var command = msg.data.toString().trim()
     var {cmd, args, opts} = parseCommand(command)
+    var installed = localStorage.getItem(`cmd/${cmd}`)
 
-    if (cmd in env) {
+    if (installed) {
+      module = await import(installed)
+    } else if (cmd in env) {
       cmd = `env.${cmd}`
     } else {
       module = await import(joinPath(env.pwd(), `${cmd}.js`))
+    }
+
+    if (module) {
       cmd = `module.${module[args[0]] ? args.shift() : 'default'}`
     }
 
