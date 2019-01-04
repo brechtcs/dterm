@@ -6,8 +6,10 @@ import {joinPath, parseCommand, parseURL} from './common.js'
 bootstrap()
 
 /**
- * Initialisation logic:
+ * Bootstrap dterm:
  */
+var cwd
+
 async function bootstrap () {
   var params = new URL(import.meta.url).searchParams
   var home = params.get('home') || localStorage.getItem('HOME_DAT')
@@ -18,11 +20,9 @@ async function bootstrap () {
   var builtins = {
     html: dedent,
     morph: function () {},
-    evalCommand: evalCommand,
-    getCWD: () => parseURL(window.location.toString()),
-    setCWD: dst => {
-      window.location.pathname = joinPath(window.location.pathname, dst)
-    }
+    getCWD: () => cwd,
+    setCWD,
+    evalCommand
   }
 
   window.env = Object.assign(builtins, env)
@@ -30,6 +30,7 @@ async function bootstrap () {
   window.onmessage = evalCommand
   localStorage.setItem('HOME_DAT', window.location.host)
 
+  readCWD()
   appendOutput(archive.url)
   updatePrompt()
 }
@@ -87,4 +88,29 @@ async function evalCommand (msg) {
 
 function updatePrompt () {
   window.postMessage('> ')
+}
+
+async function setCWD (location) {
+  var locationParsed
+  try {
+    locationParsed = new URL(location)
+    location = `${locationParsed.host}${locationParsed.pathname}`
+  } catch (err) {
+    location = `${cwd.host}${joinPath(cwd.pathname, location)}`
+  }
+  locationParsed = new URL('dat://' + location)
+
+  // make sure the destination exists
+  let archive = new DatArchive('dat://' + locationParsed.host)
+  let st = await archive.stat(locationParsed.pathname)
+  if (!st.isDirectory()) {
+    throw new Error('Not a directory')
+  }
+
+  window.location = locationParsed
+  readCWD()
+}
+
+function readCWD () {
+  cwd = parseURL(window.location.toString())
 }
