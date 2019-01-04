@@ -211,6 +211,12 @@ export async function echo (opts, ...args) {
   }
 }
 
+export function exit (opts, code) {
+  code = Number(code || 0)
+  if (isNaN(code)) throw new Error('invalid exit code')
+  window.close(code)
+}
+
 // internal methods
 // =
 
