@@ -37,26 +37,27 @@ export function help () {
 // =
 
 export async function ls (opts = {}, location = '') {
-  // pick target location
-  const cwd = env.getCWD()
-  location = toCWDLocation(location)
-  // TODO add support for other domains than CWD
+  location = joinPath(window.location.pathname, location)
 
-  // read
-  var listing = await cwd.archive.readdir(location, {stat: true})
+  // if home dir, use library to populate
+  if (location === '/') {
+    var library = await experimental.library.list()
 
-  // add link to parent directory
-  if (cwd.pathname !== '/') {
-    listing.unshift({
-      name: '..',
-      stat: await cwd.archive.stat(joinPath(cwd.pathname), '..')
-    })
+    library.toHTML = () => env.html`<div>
+      ${library.map(archive => env.html`<div>${archive.title} (${archive.url})</div>`)}
+    </div>`
+
+    return library
   }
+
+  // inside archive, use directory listing
+  var {archive, path} = env.getCWD()
+  var listing = await archive.readdir(path, {stat: true})
 
   // render
   listing.toHTML = () => env.html`<div>${listing
     .filter(entry => {
-      if (entry.name === '..' || opts.all || opts.a) {
+      if (opts.all || opts.a) {
         return true
       }
       return entry.name.startsWith('.') === false
@@ -81,7 +82,7 @@ export async function ls (opts = {}, location = '') {
       }
 
       // render
-      const entryUrl = cwd.archive.url + joinPath(location, entry.name)
+      const entryUrl = archive.url + joinPath(location, entry.name)
       const tag = entry.stat.isDirectory() ? 'strong' : 'span'
       return env.html`
         <div class="text-${color}">
@@ -101,13 +102,17 @@ export async function ls (opts = {}, location = '') {
 
 export async function cd (opts = {}, location = '') {
   location = location.toString()
-  if (location === '~') {
-    location = `dat://${window.location.hostname}`
-  }
-  if (location.startsWith('//')) {
-    location = `dat://${location}`
+
+  if (location.startsWith('dat://')) {
+    location = location.replace(/^dat:\//, '')
   } else if (location.startsWith('/')) {
-    location = `dat://${env.getCWD().host}${location}`
+    location = location.replace(/^\//, '/' + env.getCWD().key)
+  } else if (location.startsWith('~')) {
+    location = location.startsWith('~/')
+      ? location.replace(/^~\//, '/')
+      : '/'
+  } else {
+    location = joinPath(window.location.pathname, location)
   }
 
   await env.setCWD(location)
@@ -118,8 +123,13 @@ export async function cd (opts = {}, location = '') {
 }
 
 export function pwd () {
-  const cwd = env.getCWD()
-  return `dat://${cwd.host}${cwd.pathname}`
+  var path = '~'
+  var cwd = env.getCWD()
+
+  if (cwd) {
+    path += `/${cwd.key}/${cwd.path}`
+  }
+  return path
 }
 
 // folder manipulation

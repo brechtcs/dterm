@@ -7,7 +7,7 @@ import {joinPath, parseCommand, parseURL} from './common.js'
 // globals
 // =
 
-var cwd // current working directory. {url:, host:, pathname:, archive:}
+var cwd = parseCWD(window.location.pathname) // current working directory
 var env // current working environment
 
 var commandHist = {
@@ -47,7 +47,6 @@ const gt = () => {
 document.addEventListener('keydown', setFocus, {capture: true})
 document.addEventListener('keydown', onKeyDown, {capture: true})
 window.addEventListener('focus', setFocus)
-readCWD()
 updatePrompt()
 importEnvironment()
 appendOutput(html`<div><strong>Welcome to webterm.</strong> Type <code>help</code> if you get lost.</div>`)
@@ -70,7 +69,7 @@ function appendOutput (output, thenCWD, cmd) {
   thenCWD = thenCWD || cwd
 
   if (showPrompt) {
-    entry.appendChild(html`<div class="entry-header">//${shortenHash(thenCWD.host)}${thenCWD.pathname}${gt()} ${cmd || ''}</div>`)
+    entry.appendChild(html`<div class="entry-header">//${shortenHash(thenCWD.key)}/${thenCWD.path}${gt()} ${cmd || ''}</div>`)
   }
   entry.appendChild(html`<div class="entry-content">${output}</div>`)
 
@@ -95,9 +94,13 @@ function clearHistory () {
 //
 
 function updatePrompt () {
+  var prompt = cwd
+    ? `${shortenHash(cwd.key)}/${cwd.path}`
+    : ''
+
   morph(document.querySelector('.prompt'), html`
     <div class="prompt">
-      //${shortenHash(cwd.host)}${cwd.pathname}${gt()} <input onkeyup=${onPromptKeyUp} />
+      //${prompt}${gt()} <input onkeyup=${onPromptKeyUp} />
     </div>
   `)
 }
@@ -193,31 +196,34 @@ async function importEnvironment () {
 // =
 
 async function setCWD (location) {
-  var locationParsed
-  try {
-    locationParsed = new URL(location)
-    location = `${locationParsed.host}${locationParsed.pathname}`
-  } catch (err) {
-    location = `${cwd.host}${joinPath(cwd.pathname, location)}`
-  }
-  locationParsed = new URL('dat://' + location)
+  var newCWD = parseCWD(location)
 
-  // make sure the destination exists
-  let archive = new DatArchive(locationParsed.host)
-  let st = await archive.stat(locationParsed.pathname)
-  if (!st.isDirectory()) {
-    throw new Error('Not a directory')
+  if (newCWD) {
+    // make sure the destination exists
+    let st = await newCWD.archive.stat(newCWD.path)
+    if (!st.isDirectory()) {
+      throw new Error('Not a directory')
+    }
   }
-
-  window.history.pushState(null, {}, '#' + location)
-  readCWD()
+  window.history.pushState(null, {}, location)
+  cwd = newCWD
+  console.log('CWD', cwd)
 }
 
-function readCWD () {
-  cwd = parseURL(window.location.hash.slice(1) || window.location.toString())
+function parseCWD (location) {
+  var parts = location.split('/').slice(1).reduce((acc, part) => {
+    if (part === '' || part === '.') return acc
+    else if (part === '..') acc.pop()
+    else acc.push(part)
+    return acc
+  }, [])
 
-  console.log('CWD', cwd)
-  document.title = `${cwd.host || cwd.url} | Terminal`
+  if (!parts.length) return null
+  var key = parts.shift()
+  var archive = new DatArchive('dat://' + key)
+  var path = parts.join('/')
+
+  return {archive, key, path}
 }
 
 // builtins
