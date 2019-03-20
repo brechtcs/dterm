@@ -148,27 +148,41 @@ function evalPrompt () {
 
 async function evalCommand (command) {
   try {
-    var js, module
     var oldCWD = Object.assign({}, env.getCWD())
     var {cmd, args, opts} = parseCommand(command)
-
-    if (cmd in env) {
-      cmd = `env.${cmd}`
-    } else {
-      module = await importModule(joinPath(env.pwd(), `${cmd}.js`))
-      cmd = `module.${module[args[0]] ? args.shift() : 'default'}`
-    }
-
     args.unshift(opts) // opts always go first
-    js = `${cmd}(${args.map(JSON.stringify).join(', ')})`
+
+    var module = await getCommandModule(window.location.pathname, cmd)
+    var fn = `module.${module[args[0]] ? args.shift() : 'default'}`
+    var js = `${fn}(${args.map(JSON.stringify).join(', ')})`
     console.log(js)
 
     var res = await eval(js)
     appendOutput(res, oldCWD, command)
   } catch (err) {
+    console.error(err)
     appendError('Command error', err, oldCWD, command)
   }
   updatePrompt()
+}
+
+async function getCommandModule (location, cmd) {
+  var isRoot = location === '/' || location === ''
+  var url = isRoot
+    ? new URL(import.meta.url).origin
+    : 'dat:/' + location
+
+  try {
+    var command = await importModule(`${url}/commands/${cmd}.js`)
+    return command
+  } catch (err) {
+    if (location === '/') {
+      throw new Error(cmd + ': command not found')
+    } else {
+      var parent = location.split('/').slice(0, -1).join('/')
+      return getCommandModule(parent, cmd)
+    }
+  }
 }
 
 // environment
