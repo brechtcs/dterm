@@ -2,12 +2,13 @@ import html from './vendor/nanohtml-v1.2.4.js'
 import morph from './vendor/nanomorph-v5.1.3.js'
 import minimist from './vendor/minimist-v1.2.0.js'
 import {importModule} from './vendor/dynamic-import-polyfill.js'
-import {joinPath, parseCommand, parseURL} from './common.js'
+import getWorkingDir from '../modules/get-working-dir.js'
+import parseCommand from '../modules/parse-command.js'
 
 // globals
 // =
 
-var cwd = parseCWD(window.location.pathname) // current working directory
+var cwd = getWorkingDir(window.location.pathname) // current working directory
 var env // current working environment
 
 var commandHist = {
@@ -94,6 +95,7 @@ function clearHistory () {
 //
 
 function updatePrompt () {
+  var cwd = getWorkingDir(window.location.pathname)
   var prompt = cwd
     ? `${shortenHash(cwd.key)}/${cwd.path}`
     : ''
@@ -148,7 +150,7 @@ function evalPrompt () {
 
 async function evalCommand (command) {
   try {
-    var oldCWD = Object.assign({}, env.getCWD())
+    var oldCWD = Object.assign({}, getWorkingDir(window.location.pathname))
     var {cmd, args, opts} = parseCommand(command)
     args.unshift(opts) // opts always go first
 
@@ -206,49 +208,11 @@ async function importEnvironment () {
   }
 }
 
-// current working location
-// =
-
-async function setCWD (location) {
-  var newCWD = parseCWD(location)
-
-  if (newCWD) {
-    // make sure the destination exists
-    let st = await newCWD.archive.stat(newCWD.path)
-    if (!st.isDirectory()) {
-      throw new Error('Not a directory')
-    }
-  }
-  window.history.pushState(null, {}, location)
-  cwd = newCWD
-  console.log('CWD', cwd)
-}
-
-function parseCWD (location) {
-  var parts = location.split('/').slice(1).reduce((acc, part) => {
-    if (part === '' || part === '.') return acc
-    else if (part === '..') acc.pop()
-    else acc.push(part)
-    return acc
-  }, [])
-
-  if (!parts.length) return null
-  var key = parts.shift()
-  var archive = new DatArchive('dat://' + key)
-  var path = parts.join('/')
-
-  return {archive, key, path}
-}
-
 // builtins
 // =
 
 const builtins = {
   html,
   morph,
-  evalCommand,
-  getCWD () {
-    return cwd
-  },
-  setCWD
+  evalCommand
 }

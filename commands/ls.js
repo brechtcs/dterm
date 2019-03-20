@@ -1,4 +1,5 @@
-import {joinPath} from '../src/common.js';
+import getWorkingDir from '../modules/get-working-dir.js'
+import joinPath from '../modules/join-path.js';
 
 export default async function (opts = {}, location = '') {
   location = joinPath(window.location.pathname, location)
@@ -15,7 +16,7 @@ export default async function (opts = {}, location = '') {
   }
 
   // inside archive, use directory listing
-  var {archive, path} = env.getCWD()
+  var {archive, path} = getWorkingDir(location)
   var listing = await archive.readdir(path, {stat: true})
 
   // render
