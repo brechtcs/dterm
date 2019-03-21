@@ -1,9 +1,10 @@
+import getWorkingDir from './modules/get-working-dir.js'
+import parseCommand from './modules/parse-command.js'
+
 import html from './vendor/nanohtml-v1.2.4.js'
 import morph from './vendor/nanomorph-v5.1.3.js'
 import minimist from './vendor/minimist-v1.2.0.js'
 import {importModule} from './vendor/dynamic-import-polyfill.js'
-import getWorkingDir from '../modules/get-working-dir.js'
-import parseCommand from '../modules/parse-command.js'
 
 // globals
 // =
@@ -49,7 +50,7 @@ document.addEventListener('keydown', setFocus, {capture: true})
 document.addEventListener('keydown', onKeyDown, {capture: true})
 window.addEventListener('focus', setFocus)
 updatePrompt()
-importEnvironment()
+setEnvironment()
 appendOutput(html`<div><strong>Welcome to webterm.</strong> Type <code>help</code> if you get lost.</div>`)
 setFocus()
 
@@ -190,29 +191,18 @@ async function getCommandModule (location, cmd) {
 // environment
 // =
 
-async function importEnvironment () {
-  var wt = new URL(import.meta.url)
-
-  document.head.append(html`<link rel="stylesheet" href="${wt.origin}/assets/theme.css" />`)
-  try {
-    var module = await importModule(wt.origin + '/src/env.js')
-    env = Object.assign({}, module)
-    for (let k in builtins) {
-      Object.defineProperty(env, k, {value: builtins[k], enumerable: false})
-    }
-    window.env = env
-    console.log('Environment', env)
-  } catch (err) {
-    console.error(err)
-    return appendError('Failed to evaluate environment script', err, cwd)
+async function setEnvironment () {
+  var origin = new URL(import.meta.url).origin
+  var builtins = {
+    html,
+    morph,
+    evalCommand
   }
+
+  document.head.append(html`<link rel="stylesheet" href="${origin}/assets/theme.css" />`)
+  window.env = builtins
 }
 
 // builtins
 // =
 
-const builtins = {
-  html,
-  morph,
-  evalCommand
-}
