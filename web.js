@@ -1,10 +1,10 @@
 import getWorkingDir from './modules/get-working-dir.js'
+import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
 
 import html from './vendor/nanohtml-v1.2.4.js'
 import morph from './vendor/nanomorph-v5.1.3.js'
 import minimist from './vendor/minimist-v1.2.0.js'
-import {importModule} from './vendor/dynamic-import-polyfill.js'
 
 // globals
 // =
@@ -155,10 +155,10 @@ async function evalCommand (command) {
     var {cmd, args, opts} = parseCommand(command)
     args.unshift(opts) // opts always go first
 
-    var module = await getCommandModule(window.location.pathname, cmd)
+    var module = await loadCommand(cmd, window.location.pathname)
     var fn = `module.${module[args[0]] ? args.shift() : 'default'}`
     var js = `${fn}(${args.map(JSON.stringify).join(', ')})`
-    console.log(js)
+    console.log(cmd, js)
 
     var res = await eval(js)
     appendOutput(res, oldCWD, command)
@@ -167,25 +167,6 @@ async function evalCommand (command) {
     appendError('Command error', err, oldCWD, command)
   }
   updatePrompt()
-}
-
-async function getCommandModule (location, cmd) {
-  var isRoot = location === '/' || location === ''
-  var url = isRoot
-    ? new URL(import.meta.url).origin
-    : 'dat:/' + location
-
-  try {
-    var command = await importModule(`${url}/commands/${cmd}.js`)
-    return command
-  } catch (err) {
-    if (location === '/') {
-      throw new Error(cmd + ': command not found')
-    } else {
-      var parent = location.split('/').slice(0, -1).join('/')
-      return getCommandModule(parent, cmd)
-    }
-  }
 }
 
 // environment
@@ -202,7 +183,3 @@ async function setEnvironment () {
   document.head.append(html`<link rel="stylesheet" href="${origin}/assets/theme.css" />`)
   window.env = builtins
 }
-
-// builtins
-// =
-
