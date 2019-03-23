@@ -10,7 +10,7 @@ async function create () {
   var archive = new DatArchive(origin)
   var env = {
     commands: {},
-    options: {}
+    config: {}
   }
 
   for (var command of await archive.readdir('commands')) {

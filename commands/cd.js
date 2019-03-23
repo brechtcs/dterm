@@ -19,7 +19,7 @@ export default async function (opts = {}, location = '') {
 
   await setWorkingDir(location)
 
-  if (env.options.lsAfterCd) {
+  if (env.config.lsAfterCd) {
     return ls()
   }
 }

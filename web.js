@@ -151,12 +151,12 @@ function evalPrompt () {
 
 async function evalCommand (command) {
   try {
-    var oldCWD = Object.assign({}, getWorkingDir(window.location.pathname))
+    var oldCWD = getWorkingDir(window.location.pathname)
     var {cmd, args, opts} = parseCommand(command)
-    args.unshift(opts) // opts always go first
+    var mod = await loadCommand(cmd, window.location.pathname)
+    var fn = `mod.${mod[args[0]] ? args.shift() : 'default'}`
 
-    var module = await loadCommand(cmd, window.location.pathname)
-    var fn = `module.${module[args[0]] ? args.shift() : 'default'}`
+    args.unshift(opts) // opts always go first
     var js = `${fn}(${args.map(JSON.stringify).join(', ')})`
     console.log(cmd, js)
 
