@@ -3,9 +3,9 @@ import getWorkingDir from './modules/get-working-dir.js'
 import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
 
-import html from './vendor/nanohtml-v1.2.4.js'
-import morph from './vendor/nanomorph-v5.1.3.js'
-import minimist from './vendor/minimist-v1.2.0.js'
+import html from './shared/nanohtml-v1.2.4.js'
+import morph from './shared/nanomorph-v5.1.3.js'
+import minimist from './shared/minimist-v1.2.0.js'
 
 // globals
 // =
