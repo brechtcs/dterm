@@ -1,3 +1,4 @@
+import getEnv from './modules/dterm-env.js'
 import getWorkingDir from './modules/get-working-dir.js'
 import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
@@ -10,7 +11,6 @@ import minimist from './vendor/minimist-v1.2.0.js'
 // =
 
 var cwd = getWorkingDir(window.location.pathname) // current working directory
-var env // current working environment
 
 var commandHist = {
   array: new Array(),
@@ -174,6 +174,7 @@ async function evalCommand (command) {
 
 async function setEnvironment () {
   var origin = new URL(import.meta.url).origin
+  var env = await getEnv()
   var builtins = {
     html,
     morph,
@@ -181,5 +182,5 @@ async function setEnvironment () {
   }
 
   document.head.append(html`<link rel="stylesheet" href="${origin}/assets/theme.css" />`)
-  window.env = builtins
+  window.env = Object.assign(env, builtins)
 }

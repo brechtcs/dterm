@@ -1,5 +1,6 @@
 export default async function (cmd, location) {
-  return recurseDirs(cmd, location)
+  var installed = env.commands[cmd]
+  return installed ? import(installed) : recurseDirs(cmd, location)
 }
 
 async function recurseDirs (cmd, location) {

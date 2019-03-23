@@ -1,11 +1,13 @@
-export default function (left, right) {
-  left = (left || '').toString()
-  right = (right || '').toString()
+export default function join (...args) {
+  var left = (args.shift() || '').toString()
+  var right = (args.shift() || '').toString()
+  var joined = left + right
+
   if (left.endsWith('/') && right.startsWith('/')) {
-    return left + right.slice(1)
+    joined = left + right.slice(1)
   }
   if (!left.endsWith('/') && !right.startsWith('/')) {
-    return left + '/' + right
+    joined = left + '/' + right
   }
-  return left + right
+  return args.length ? join(joined, ...args) : joined
 }

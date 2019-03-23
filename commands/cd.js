@@ -2,10 +2,6 @@ import joinPath from '../modules/join-path.js'
 import getWorkingDir from '../modules/get-working-dir.js'
 import ls from './ls.js'
 
-var config = {
-  lsAfterCd: true
-}
-
 export default async function (opts = {}, location = '') {
   location = location.toString()
 
@@ -23,7 +19,7 @@ export default async function (opts = {}, location = '') {
 
   await setWorkingDir(location)
 
-  if (config.lsAfterCd) {
+  if (env.options.lsAfterCd) {
     return ls()
   }
 }
