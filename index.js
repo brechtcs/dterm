@@ -10,8 +10,6 @@ import minimist from './shared/minimist-v1.2.0.js'
 // globals
 // =
 
-var cwd = getWorkingDir(window.location.pathname) // current working directory
-
 var commandHist = {
   array: new Array(),
   insert: -1,
@@ -51,7 +49,7 @@ document.addEventListener('keydown', onKeyDown, {capture: true})
 window.addEventListener('focus', setFocus)
 updatePrompt()
 setEnvironment()
-appendOutput(html`<div><strong>Welcome to webterm.</strong> Type <code>help</code> if you get lost.</div>`)
+appendOutput(html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`, false)
 setFocus()
 
 // output
@@ -67,11 +65,12 @@ function appendOutput (output, thenCWD, cmd) {
   }
 
   var entry = html`<div class="entry"></div>`
-  var showPrompt = !!thenCWD
-  thenCWD = thenCWD || cwd
+  var showPrompt = thenCWD !== false
+  thenCWD = thenCWD
 
   if (showPrompt) {
-    entry.appendChild(html`<div class="entry-header">//${shortenHash(thenCWD.key)}/${thenCWD.path}${gt()} ${cmd || ''}</div>`)
+    var prompt = thenCWD ? `${shortenHash(thenCWD.key)}/${thenCWD.path}` : ''
+    entry.appendChild(html`<div class="entry-header">//${prompt}${gt()} ${cmd || ''}</div>`)
   }
   entry.appendChild(html`<div class="entry-content">${output}</div>`)
 
