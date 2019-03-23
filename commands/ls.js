@@ -1,6 +1,8 @@
 import getWorkingDir from '../modules/get-working-dir.js'
 import joinPath from '../modules/join-path.js';
 
+import html from '../shared/nanohtml-v1.2.4.js'
+
 export default async function (opts = {}, location = '') {
   location = joinPath(window.location.pathname, location)
 
@@ -8,8 +10,8 @@ export default async function (opts = {}, location = '') {
   if (location === '/') {
     var library = await experimental.library.list()
 
-    library.toHTML = () => env.html`<div>
-      ${library.map(archive => env.html`<div>${archive.title} (${archive.url})</div>`)}
+    library.toHTML = () => html`<div>
+      ${library.map(archive => html`<div>${archive.title} (${archive.url})</div>`)}
     </div>`
 
     return library
@@ -20,7 +22,7 @@ export default async function (opts = {}, location = '') {
   var listing = await archive.readdir(path, {stat: true})
 
   // render
-  listing.toHTML = () => env.html`<div>${listing
+  listing.toHTML = () => html`<div>${listing
     .filter(entry => {
       if (opts.all || opts.a) {
         return true
@@ -49,7 +51,7 @@ export default async function (opts = {}, location = '') {
       // render
       const entryUrl = archive.url + joinPath(location, entry.name)
       const tag = entry.stat.isDirectory() ? 'strong' : 'span'
-      return env.html`
+      return html`
         <div class="text-${color}">
           <${tag}>
             <a

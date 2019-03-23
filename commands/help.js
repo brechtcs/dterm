@@ -1,3 +1,5 @@
+import html from '../shared/nanohtml-v1.2.4.js'
+
 const METHOD_HELP = [
   {name: 'term', description: 'Configure dterm and install commands'},
   {name: 'ls', description: 'List files in the directory'},
@@ -15,8 +17,8 @@ const METHOD_HELP = [
 export default function () {
   return {
     toHTML() {
-      return env.html`<table>
-        ${METHOD_HELP.map(method => env.html`<tr>
+      return html`<table>
+        ${METHOD_HELP.map(method => html`<tr>
           <th style="text-align:left">${method.name}</th>
           <td>${method.description}</td>
         </tr>`)}

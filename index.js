@@ -176,8 +176,7 @@ async function setEnvironment () {
   var origin = new URL(import.meta.url).origin
   var env = await getEnv()
   var builtins = {
-    html,
-    morph,
+    clearHistory,
     evalCommand
   }
 
