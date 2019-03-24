@@ -1,4 +1,5 @@
 import joinPath from '../modules/join-path.js'
+import getEnv from '../modules/dterm-env.js'
 import getWorkingDir from '../modules/get-working-dir.js'
 import ls from './ls.js'
 
@@ -19,7 +20,7 @@ export default async function (opts = {}, location = '') {
 
   await setWorkingDir(location)
 
-  if (env.config.lsAfterCd) {
+  if ((await getEnv()).config.lsAfterCd) {
     return ls()
   }
 }

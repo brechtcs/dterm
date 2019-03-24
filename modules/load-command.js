@@ -1,5 +1,7 @@
+import getEnv from '../modules/dterm-env.js'
+
 export default async function (cmd, location) {
-  var installed = env.commands[cmd]
+  var installed = (await getEnv()).commands[cmd]
   return installed ? import(installed) : recurseDirs(cmd, location)
 }
 

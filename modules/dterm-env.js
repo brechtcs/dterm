@@ -1,8 +1,10 @@
 import joinPath from './join-path.js'
 import {ENV_STORAGE_KEY} from './dterm-constants.js'
 
+var cached = null
+
 export default async function () {
-  return load() || await create()
+  return cached || load() || await create()
 }
 
 async function create () {
@@ -27,11 +29,12 @@ function load () {
 
   var env = JSON.parse(saved)
   Object.freeze(env.commands)
+  cached = env
   return env
 }
 
 function save (env) {
   //TODO: encrypt before saving to prevent tampering
   localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(env))
-  return env
+  return load()
 }

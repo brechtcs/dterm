@@ -1,4 +1,3 @@
-import getEnv from './modules/dterm-env.js'
 import getWorkingDir from './modules/get-working-dir.js'
 import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
@@ -48,7 +47,7 @@ document.addEventListener('keydown', setFocus, {capture: true})
 document.addEventListener('keydown', onKeyDown, {capture: true})
 window.addEventListener('focus', setFocus)
 updatePrompt()
-setEnvironment()
+setupWindow()
 appendOutput(html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`, false)
 setFocus()
 
@@ -171,14 +170,10 @@ async function evalCommand (command) {
 // environment
 // =
 
-async function setEnvironment () {
+async function setupWindow () {
   var origin = new URL(import.meta.url).origin
-  var env = await getEnv()
-  var builtins = {
-    clearHistory,
-    evalCommand
-  }
-
   document.head.append(html`<link rel="stylesheet" href="${origin}/assets/theme.css" />`)
-  window.env = Object.assign(env, builtins)
+
+  window.clearHistory = clearHistory
+  window.evalCommand = evalCommand
 }

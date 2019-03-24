@@ -45,7 +45,7 @@ export default async function (opts = {}, location = '') {
       function onclick (e) {
         e.preventDefault()
         e.stopPropagation()
-        env.evalCommand(`cd ${entry.name}`)
+        window.evalCommand(`cd ${entry.name}`)
       }
 
       // render
