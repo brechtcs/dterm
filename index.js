@@ -1,6 +1,7 @@
 import getWorkingDir from './modules/get-working-dir.js'
 import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
+import shortenHash from './modules/shorten-hash.js'
 
 import html from './shared/nanohtml-v1.2.4.js'
 import morph from './shared/nanomorph-v5.1.3.js'
@@ -104,10 +105,6 @@ function updatePrompt () {
       //${prompt}${gt()} <input onkeyup=${onPromptKeyUp} />
     </div>
   `)
-}
-
-function shortenHash (str = '') {
-  return str.replace(/[0-9a-f]{64}/ig, v => `${v.slice(0, 6)}..${v.slice(-2)}`)
 }
 
 function setFocus () {
