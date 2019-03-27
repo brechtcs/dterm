@@ -1,4 +1,4 @@
-import loadCommand from './modules/load-command.js'
+import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
 import shortenHash from './modules/shorten-hash.js'
