@@ -1,5 +1,5 @@
-import getWorkingDir from '../modules/get-working-dir.js'
 import joinPath from '../modules/join-path.js'
+import parsePath from '../modules/dterm-parse-path.js'
 import {ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
 
 export function config (opts) {
@@ -20,7 +20,7 @@ export function install (opts, path, name) {
   var env = loadEnv()
 
   if (!path.startsWith('dat://')) {
-    var cwd = getWorkingDir(window.location.pathname)
+    var cwd = parsePath(window.location.pathname)
     path = joinPath(cwd.archive.url, cwd.path, path)
   }
   if (!name) {

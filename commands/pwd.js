@@ -1,8 +1,8 @@
-import getWorkingDir from '../modules/get-working-dir.js'
+import parsePath from '../modules/dterm-parse-path.js'
 
 export default function () {
   var path = '~'
-  var cwd = getWorkingDir(window.location.pathname)
+  var cwd = parsePath(window.location.pathname)
 
   if (cwd) {
     path += `/${cwd.key}/${cwd.path}`

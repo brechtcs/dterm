@@ -1,6 +1,6 @@
-import getWorkingDir from './modules/get-working-dir.js'
 import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
+import parsePath from './modules/dterm-parse-path.js'
 import shortenHash from './modules/shorten-hash.js'
 
 import html from './shared/nanohtml-v1.2.4.js'
@@ -95,7 +95,7 @@ function clearHistory () {
 //
 
 function updatePrompt () {
-  var cwd = getWorkingDir(window.location.pathname)
+  var cwd = parsePath(window.location.pathname)
   var prompt = cwd
     ? `${shortenHash(cwd.key)}/${cwd.path}`
     : ''
@@ -146,7 +146,7 @@ function evalPrompt () {
 
 async function evalCommand (command) {
   try {
-    var oldCWD = getWorkingDir(window.location.pathname)
+    var oldCWD = parsePath(window.location.pathname)
     var {cmd, args, opts} = parseCommand(command)
     var mod = await loadCommand(cmd, window.location.pathname)
     var fn = `mod.${mod[args[0]] ? args.shift() : 'default'}`

@@ -1,11 +1,11 @@
-import getWorkingDir from '../modules/get-working-dir.js'
 import joinPath from '../modules/join-path.js'
+import parsePath from '../modules/dterm-parse-path.js'
 
 export default async function (opts, ...args) {
   var appendFlag = opts.a || opts.append
   var dst = opts.to
   var res = args.join(' ')
-  var cwd = getWorkingDir(window.location.pathname)
+  var cwd = parsePath(window.location.pathname)
 
   if (dst) {
     dst = opts.to.startsWith('/') ? dst : joinPath(cwd.path, dst)

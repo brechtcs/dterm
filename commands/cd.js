@@ -1,6 +1,7 @@
-import joinPath from '../modules/join-path.js'
 import getEnv from '../modules/dterm-env.js'
-import getWorkingDir from '../modules/get-working-dir.js'
+import joinPath from '../modules/join-path.js'
+import parsePath from '../modules/dterm-parse-path.js'
+
 import ls from './ls.js'
 
 export default async function (opts = {}, location = '') {
@@ -9,7 +10,7 @@ export default async function (opts = {}, location = '') {
   if (location.startsWith('dat://')) {
     location = location.replace(/^dat:\//, '')
   } else if (location.startsWith('/')) {
-    location = location.replace(/^\//, '/' + getWorkingDir(window.location.pathname).key)
+    location = location.replace(/^\//, '/' + parsePath(window.location.pathname).key)
   } else if (location.startsWith('~')) {
     location = location.startsWith('~/')
       ? location.replace(/^~\//, '/')
@@ -26,7 +27,7 @@ export default async function (opts = {}, location = '') {
 }
 
 async function setWorkingDir (location) {
-  var cwd = getWorkingDir(location)
+  var cwd = parsePath(location)
 
   if (cwd) {
     // make sure the destination exists

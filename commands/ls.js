@@ -1,5 +1,5 @@
-import getWorkingDir from '../modules/get-working-dir.js'
 import joinPath from '../modules/join-path.js'
+import parsePath from '../modules/dterm-parse-path.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 import html from '../shared/nanohtml-v1.2.4.js'
@@ -19,7 +19,7 @@ export default async function (opts = {}, location = '') {
   }
 
   // inside archive, use directory listing
-  var {archive, path} = getWorkingDir(location)
+  var {archive, path} = parsePath(location)
   var listing = await archive.readdir(path, {stat: true})
 
   // render
