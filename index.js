@@ -1,14 +1,14 @@
-import html from './vendor/nanohtml-v1.2.4.js'
-import morph from './vendor/nanomorph-v5.1.3.js'
-import minimist from './vendor/minimist-v1.2.0.js'
-import {importModule} from './vendor/dynamic-import-polyfill.js'
-import {joinPath, parseCommand, parseURL} from './common.js'
+import loadCommand from './modules/dterm-load-command.js'
+import parseCommand from './modules/parse-command.js'
+import parsePath from './modules/dterm-parse-path.js'
+import shortenHash from './modules/shorten-hash.js'
+
+import html from './shared/nanohtml-v1.2.4.js'
+import morph from './shared/nanomorph-v5.1.3.js'
+import minimist from './shared/minimist-v1.2.0.js'
 
 // globals
 // =
-
-var cwd // current working directory. {url:, host:, pathname:, archive:}
-var env // current working environment
 
 var commandHist = {
   array: new Array(),
@@ -47,10 +47,9 @@ const gt = () => {
 document.addEventListener('keydown', setFocus, {capture: true})
 document.addEventListener('keydown', onKeyDown, {capture: true})
 window.addEventListener('focus', setFocus)
-readCWD()
 updatePrompt()
-importEnvironment()
-appendOutput(html`<div><strong>Welcome to webterm.</strong> Type <code>help</code> if you get lost.</div>`)
+setupWindow()
+appendOutput(html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`, false)
 setFocus()
 
 // output
@@ -66,11 +65,12 @@ function appendOutput (output, thenCWD, cmd) {
   }
 
   var entry = html`<div class="entry"></div>`
-  var showPrompt = !!thenCWD
-  thenCWD = thenCWD || cwd
+  var showPrompt = thenCWD !== false
+  thenCWD = thenCWD
 
   if (showPrompt) {
-    entry.appendChild(html`<div class="entry-header">//${shortenHash(thenCWD.host)}${thenCWD.pathname}${gt()} ${cmd || ''}</div>`)
+    var prompt = thenCWD ? `${shortenHash(thenCWD.key)}/${thenCWD.path}` : ''
+    entry.appendChild(html`<div class="entry-header">//${prompt}${gt()} ${cmd || ''}</div>`)
   }
   entry.appendChild(html`<div class="entry-content">${output}</div>`)
 
@@ -95,15 +95,16 @@ function clearHistory () {
 //
 
 function updatePrompt () {
+  var cwd = parsePath(window.location.pathname)
+  var prompt = cwd
+    ? `${shortenHash(cwd.key)}/${cwd.path}`
+    : ''
+
   morph(document.querySelector('.prompt'), html`
     <div class="prompt">
-      //${shortenHash(cwd.host)}${cwd.pathname}${gt()} <input onkeyup=${onPromptKeyUp} />
+      //${prompt}${gt()} <input onkeyup=${onPromptKeyUp} />
     </div>
   `)
-}
-
-function shortenHash (str = '') {
-  return str.replace(/[0-9a-f]{64}/ig, v => `${v.slice(0, 6)}..${v.slice(-2)}`)
 }
 
 function setFocus () {
@@ -145,24 +146,19 @@ function evalPrompt () {
 
 async function evalCommand (command) {
   try {
-    var js, module
-    var oldCWD = Object.assign({}, env.getCWD())
+    var oldCWD = parsePath(window.location.pathname)
     var {cmd, args, opts} = parseCommand(command)
-
-    if (cmd in env) {
-      cmd = `env.${cmd}`
-    } else {
-      module = await importModule(joinPath(env.pwd(), `${cmd}.js`))
-      cmd = `module.${module[args[0]] ? args.shift() : 'default'}`
-    }
+    var mod = await loadCommand(cmd, window.location.pathname)
+    var fn = `mod.${mod[args[0]] ? args.shift() : 'default'}`
 
     args.unshift(opts) // opts always go first
-    js = `${cmd}(${args.map(JSON.stringify).join(', ')})`
-    console.log(js)
+    var js = `${fn}(${args.map(JSON.stringify).join(', ')})`
+    console.log(cmd, js)
 
     var res = await eval(js)
     appendOutput(res, oldCWD, command)
   } catch (err) {
+    console.error(err)
     appendError('Command error', err, oldCWD, command)
   }
   updatePrompt()
@@ -171,64 +167,10 @@ async function evalCommand (command) {
 // environment
 // =
 
-async function importEnvironment () {
-  var wt = new URL(import.meta.url)
+async function setupWindow () {
+  var origin = new URL(import.meta.url).origin
+  document.head.append(html`<link rel="stylesheet" href="${origin}/assets/theme.css" />`)
 
-  document.head.append(html`<link rel="stylesheet" href="${wt.origin}/assets/theme.css" />`)
-  try {
-    var module = await importModule(wt.origin + '/src/env.js')
-    env = Object.assign({}, module)
-    for (let k in builtins) {
-      Object.defineProperty(env, k, {value: builtins[k], enumerable: false})
-    }
-    window.env = env
-    console.log('Environment', env)
-  } catch (err) {
-    console.error(err)
-    return appendError('Failed to evaluate environment script', err, cwd)
-  }
-}
-
-// current working location
-// =
-
-async function setCWD (location) {
-  var locationParsed
-  try {
-    locationParsed = new URL(location)
-    location = `${locationParsed.host}${locationParsed.pathname}`
-  } catch (err) {
-    location = `${cwd.host}${joinPath(cwd.pathname, location)}`
-  }
-  locationParsed = new URL('dat://' + location)
-
-  // make sure the destination exists
-  let archive = new DatArchive(locationParsed.host)
-  let st = await archive.stat(locationParsed.pathname)
-  if (!st.isDirectory()) {
-    throw new Error('Not a directory')
-  }
-
-  window.history.pushState(null, {}, '#' + location)
-  readCWD()
-}
-
-function readCWD () {
-  cwd = parseURL(window.location.hash.slice(1) || window.location.toString())
-
-  console.log('CWD', cwd)
-  document.title = `${cwd.host || cwd.url} | Terminal`
-}
-
-// builtins
-// =
-
-const builtins = {
-  html,
-  morph,
-  evalCommand,
-  getCWD () {
-    return cwd
-  },
-  setCWD
+  window.clearHistory = clearHistory
+  window.evalCommand = evalCommand
 }
