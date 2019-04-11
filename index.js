@@ -1,3 +1,5 @@
+import ls from './commands/ls.js'
+
 import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
@@ -32,7 +34,33 @@ var commandHist = {
   reset () {
     this.cursor = this.array.length
   }
- }
+}
+
+var tabCompletion = {
+  index: -1,
+  menu: [], 
+  complete: async function (prompt, back) {
+    var parts = prompt.split(' ')
+    if (parts.length < 2) return prompt
+    
+    var query = parts.pop()
+    if (this.index < 0) {
+      this.menu = (await ls()).filter(entry => entry.name.startsWith(query))
+    }
+    var index = back ? (this.index - 1) : (this.index + 1)
+    var item = this.menu[index]
+    
+    if (item) {
+      this.index = index
+      return parts.join(' ') + ' ' + item.name + (item.isDir ? '/' : '')
+    }
+    return prompt
+  },
+  reset: function () {
+    this.index = -1 
+    this.menu = [] 
+  }
+}
 
 // helper elem
 const gt = () => {
@@ -57,8 +85,8 @@ setFocus()
 
 function appendOutput (output, thenCWD, cmd) {
   if (typeof output === 'undefined') {
-    output = 'Ok.'
-  } else if (output.toHTML) {
+    output = ''
+  } else if (typeof output.toHTML === 'function') {
     output = output.toHTML()
   } else if (typeof output !== 'string' && !(output instanceof Element)) {
     output = JSON.stringify(output).replace(/^"|"$/g, '')
@@ -111,7 +139,14 @@ function setFocus () {
   document.querySelector('.prompt input').focus()
 }
 
-function onKeyDown (e) {
+async function onKeyDown (e) {
+  if (e.code === 'Tab') {
+    var prompt = document.querySelector('.prompt input')
+    prompt.value = await tabCompletion.complete(prompt.value, e.shiftKey)
+  } else if (!e.shiftKey) {
+    tabCompletion.reset()
+  }
+  
   if (e.code === 'KeyL' && e.ctrlKey) {
     e.preventDefault()
     clearHistory()

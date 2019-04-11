@@ -9,10 +9,11 @@ export default async function (opts = {}, location = '') {
 
   // if home dir, use library to populate
   if (location === '/') {
-    var library = await experimental.library.list()
+    var library = (await experimental.library.list())
+      .map(summarizeLibraryItem)
 
     library.toHTML = () => html`<div>
-      ${library.map(summarizeLibraryItem).map(displayEntry)}
+      ${library.map(displayEntry)}
     </div>`
 
     return library
@@ -20,13 +21,13 @@ export default async function (opts = {}, location = '') {
 
   // inside archive, use directory listing
   var {archive, path} = parsePath(location)
-  var listing = await archive.readdir(path, {stat: true})
+  var listing = (await archive.readdir(path, {stat: true}))
+    .map(summarizeDirEntry)
+    .sort(dirsBeforeFiles)
 
   // render
   listing.toHTML = () => html`<div>${listing
     .filter(filterDotfiles(opts.all || opts.a))
-    .map(summarizeDirEntry)
-    .sort(dirsBeforeFiles)
     .map(displayEntry)
   }</div>`
 
