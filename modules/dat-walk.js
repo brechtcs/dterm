@@ -33,34 +33,16 @@ function normalize (base) {
 /**
  * Tests
  */
-var passed = true
-
-export async function test () {
-  var dat = await DatArchive.create({
-    title: 'dat-walk test',
-    prompt: false
-  })
+export async function test (t) {
+  var key = new URL(import.meta.url).hostname
+  var dat = await DatArchive.load(key)
+  var file, walked = []
   
-  var count = 0
-  await dat.mkdir('subdir')
-  await dat.writeFile('file.md', '')
-  await dat.writeFile('subdir/another.md', '')
-
-  for await (var file of walk(dat)) {
-    check(file === 'dat.json' || file === '.datignore' || file === 'file.md' || file === 'subdir/another.md', file)
-    count++
-  } 
-  check(count === 4, 'number of files walked')
-  await DatArchive.unlink(dat.url)
+  for await (file of walk(dat)) {
+    t.ok(await dat.stat(file), 'walked: ' + file)
+    walked.push(file)
+  }
   
-  return passed
-}
-
-function check (res, msg) {
-  if (res) {
-    console.info(msg)
-  } else {
-    console.error(msg)
-    passed = false
-  }  
+  t.ok(walked.includes('dat.json'), 'includes dat.json')
+  t.ok(walked.includes('modules/dat-walk.js'), 'includes modules/dat-walk.js')
 }

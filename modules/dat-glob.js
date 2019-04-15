@@ -36,32 +36,20 @@ async function collect (it) {
 /**
  * Tests
  */
-var passed = true
-
-export async function test () {
+export async function test (t) {
   var key = new URL(import.meta.url).hostname
   var dat = await DatArchive.load(key)
   
   var indexes = await glob(dat, 'index.{html,js}').collect() 
-  check(indexes.includes('index.html'), 'find index.html')
-  check(indexes.includes('index.js'), 'find index.js')
-  check(indexes.length === 2, 'only two index files')
+  t.ok(indexes.includes('index.html'), 'find index.html')
+  t.ok(indexes.includes('index.js'), 'find index.js')
+  t.ok(indexes.length === 2, 'only two index files')
   
   var json = await glob(dat, '*.json').collect()
-  check(json.includes('dat.json'), 'find dat.json')
-  check(json.length === 1, 'only one json file')
+  t.ok(json.includes('dat.json'), 'find dat.json')
+  t.ok(json.length === 1, 'only one json file')
   
   for await (var file of glob(dat, '**/*.js')) {
-    check(file.endsWith('.js'), 'find js: ' + file)
-  }
-  return passed
-}
-
-function check (res, msg) {
-  if (res) {
-    console.info(msg)
-  } else {
-    console.error(msg)
-    passed = false
+    t.ok(file.endsWith('.js'), 'find js: ' + file)
   }
 }

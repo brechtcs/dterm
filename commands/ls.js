@@ -8,7 +8,7 @@ export default async function (opts = {}, location = '') {
   location = joinPath(window.location.pathname, location)
 
   // if home dir, use library to populate
-  if (location === '/') {
+  if (!location) {
     var library = (await experimental.library.list())
       .map(summarizeLibraryItem)
 

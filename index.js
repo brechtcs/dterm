@@ -3,6 +3,7 @@ import joinPath from './modules/join-path.js'
 import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
+import relativePath from './modules/relative-path.js'
 import shortenHash from './modules/shorten-hash.js'
 
 import html from './shared/nanohtml-v1.2.4.js'
@@ -39,30 +40,30 @@ var commandHist = {
 
 var tabCompletion = {
   index: -1,
-  menu: [], 
+  menu: [],
   complete: async function (prompt, back) {
-    var {archive, path} = parsePath(window.location.pathname)
+    var dat = parsePath(window.location.pathname)
     var parts = prompt.split(' ')
-    
-    if (!archive || parts.length < 2) {
+
+    if (!dat || parts.length < 2) {
       return prompt
     }
+    var {archive, path} = dat
     var last = parts.pop()
-    
+
     if (this.index < 0) {
-      var base = new RegExp(`^${path}\/`)
       var pattern = isGlob(last) ? last : last + '*'
       var query = {
         pattern: path ? joinPath(path, pattern) : pattern,
         dirs: true
       }
       this.menu = await glob(archive, query).collect()
-      this.menu = this.menu.map(item => item.replace(base, '')).sort()
+      this.menu = this.menu.map(item => relativePath(path, item)).sort()
     }
-    
+
     var index = back ? (this.index - 1) : (this.index + 1)
     var item = this.menu[index]
-    
+
     if (item) {
       this.index = index
       return parts.join(' ') + ' ' + item
@@ -70,8 +71,8 @@ var tabCompletion = {
     return prompt
   },
   reset: function () {
-    this.index = -1 
-    this.menu = [] 
+    this.index = -1
+    this.menu = []
   }
 }
 
@@ -159,7 +160,7 @@ async function onKeyDown (e) {
   } else if (!e.shiftKey) {
     tabCompletion.reset()
   }
-  
+
   if (e.code === 'KeyL' && e.ctrlKey) {
     e.preventDefault()
     clearHistory()
