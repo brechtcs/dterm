@@ -149,13 +149,8 @@ async function evalCommand (command) {
     var oldCWD = parsePath(window.location.pathname)
     var {cmd, args, opts} = parseCommand(command)
     var mod = await loadCommand(cmd, window.location.pathname)
-    var fn = `mod.${mod[args[0]] ? args.shift() : 'default'}`
-
-    args.unshift(opts) // opts always go first
-    var js = `${fn}(${args.map(JSON.stringify).join(', ')})`
-    console.log(cmd, js)
-
-    var res = await eval(js)
+    var fn = mod[args[0]] ? mod[args.shift()] : mod.default
+    var res = await fn(opts, ...args)
     appendOutput(res, oldCWD, command)
   } catch (err) {
     console.error(err)
