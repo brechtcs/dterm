@@ -1,9 +1,13 @@
+import glob from './modules/dat-glob.js'
+import joinPath from './modules/join-path.js'
 import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
+import relativePath from './modules/relative-path.js'
 import shortenHash from './modules/shorten-hash.js'
 
 import html from './shared/nanohtml-v1.2.4.js'
+import isGlob from './shared/is-glob-v4.0.1.js'
 import morph from './shared/nanomorph-v5.1.3.js'
 import minimist from './shared/minimist-v1.2.0.js'
 
@@ -32,7 +36,45 @@ var commandHist = {
   reset () {
     this.cursor = this.array.length
   }
- }
+}
+
+var tabCompletion = {
+  index: -1,
+  menu: [],
+  complete: async function (prompt, back) {
+    var dat = parsePath(window.location.pathname)
+    var parts = prompt.split(' ')
+
+    if (!dat || parts.length < 2) {
+      return prompt
+    }
+    var {archive, path} = dat
+    var last = parts.pop()
+
+    if (this.index < 0) {
+      var pattern = isGlob(last) ? last : last + '*'
+      var query = {
+        pattern: path ? joinPath(path, pattern) : pattern,
+        dirs: true
+      }
+      this.menu = await glob(archive, query).collect()
+      this.menu = this.menu.map(item => relativePath(path, item)).sort()
+    }
+
+    var index = back ? (this.index - 1) : (this.index + 1)
+    var item = this.menu[index]
+
+    if (item) {
+      this.index = index
+      return parts.join(' ') + ' ' + item
+    }
+    return prompt
+  },
+  reset: function () {
+    this.index = -1
+    this.menu = []
+  }
+}
 
 // helper elem
 const gt = () => {
@@ -57,8 +99,8 @@ setFocus()
 
 function appendOutput (output, thenCWD, cmd) {
   if (typeof output === 'undefined') {
-    output = 'Ok.'
-  } else if (output.toHTML) {
+    output = ''
+  } else if (typeof output.toHTML === 'function') {
     output = output.toHTML()
   } else if (typeof output !== 'string' && !(output instanceof Element)) {
     output = JSON.stringify(output).replace(/^"|"$/g, '')
@@ -111,7 +153,14 @@ function setFocus () {
   document.querySelector('.prompt input').focus()
 }
 
-function onKeyDown (e) {
+async function onKeyDown (e) {
+  if (e.code === 'Tab') {
+    var prompt = document.querySelector('.prompt input')
+    prompt.value = await tabCompletion.complete(prompt.value, e.shiftKey)
+  } else if (!e.shiftKey) {
+    tabCompletion.reset()
+  }
+
   if (e.code === 'KeyL' && e.ctrlKey) {
     e.preventDefault()
     clearHistory()
