@@ -1,4 +1,7 @@
+import control from './modules/element-controller.js'
 import glob from './modules/dat-glob.js'
+import html from './shared/nanohtml-v1.2.4.js'
+import isGlob from './shared/is-glob-v4.0.1.js'
 import joinPath from './modules/join-path.js'
 import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
@@ -6,215 +9,267 @@ import parsePath from './modules/dterm-parse-path.js'
 import relativePath from './modules/relative-path.js'
 import shortenHash from './modules/shorten-hash.js'
 
-import html from './shared/nanohtml-v1.2.4.js'
-import isGlob from './shared/is-glob-v4.0.1.js'
-import morph from './shared/nanomorph-v5.1.3.js'
-import minimist from './shared/minimist-v1.2.0.js'
+var term = control('main')
+term.view(terminal)
+term.use(render)
+term.use(focus)
+term.use(commands)
+term.use(keyboard)
+term.use(history)
+term.use(menu)
+term.use(globals)
+term.use(debug)
+term.render()
+term.emit('focus')
 
-// globals
-// =
+/**
+ * Elements
+ */
+function terminal (state, emit) {
+  return html`<main>
+    <div class="output">
+      ${state.entries.map(output)}
+    </div>
+    ${prompt(state, emit)}
+  </main>`
+}
 
-var commandHist = {
-  array: new Array(),
-  insert: -1,
-  cursor: -1,
-  add (entry) {
-    if (entry) {
-      this.array.push(entry)
-    }
-    this.cursor = this.array.length
-  },
-  prevUp () {
-    if (this.cursor === -1) return ''
-    this.cursor = Math.max(0, this.cursor - 1)
-    return this.array[this.cursor]
-  },
-  prevDown () {
-    this.cursor = Math.min(this.array.length, this.cursor + 1)
-    return this.array[this.cursor] || ''
-  },
-  reset () {
-    this.cursor = this.array.length
+function welcome () {
+  return html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`
+}
+
+function output (entry) {
+  return html`<div class="entry">
+    ${command(entry)}
+    <div class="entry-content">${entry.out}</div>
+  </div>`
+}
+
+function error (err) {
+  return html`<div class="error">
+    <div class="error-header">${err.msg}</div>
+    <div class="error-stack">${err.toString()}</div>
+  </div>`
+}
+
+function command (entry) {
+  if (typeof entry.in !== 'string') return ''
+  var prompt = entry.cwd ? `/${shortenHash(entry.cwd.key)}/${entry.cwd.path}` : ''
+  return  html`<div class="entry-header">~${prompt} ${entry.in}</div>`
+}
+
+
+function prompt (state, emit) {
+  if (state.prompt === false) {
+    return ''
+  }
+  var prompt = state.cwd ? `/${shortenHash(state.cwd.key)}/${state.cwd.path}` : ''
+  var input = html`<input value=${state.prompt}>`
+
+  input.addEventListener('keyup', function (e) {
+    var action = (e.code === 'Enter')
+      ? 'cmd:enter'
+      : 'cmd:change'
+    emit(action, input.value)
+  })
+
+  return html`<div class="prompt">
+    ~${prompt} ${input}
+  </div>`
+}
+
+/**
+ * Stores
+ */
+function render (state, emitter, term) {
+  emitter.on('render', function () {
+    term.render()
+    emitter.emit('focus')
+  })
+}
+
+function focus (state, emitter) {
+  emitter.on('focus', setFocus)
+  document.addEventListener('keydown', setFocus, {capture: true})
+  window.addEventListener('focus', setFocus)
+
+  function setFocus () {
+    setTimeout(() => {
+      var prompt = document.querySelector('.prompt input')
+      if (prompt) prompt.focus()
+    })
   }
 }
 
-var tabCompletion = {
-  index: -1,
-  menu: [],
-  complete: async function (prompt, back) {
-    var dat = parsePath(window.location.pathname)
-    var parts = prompt.split(' ')
+function commands (state, emitter) {
+  state.cwd = parsePath(window.location.pathname)
+  state.prompt = ''
+  state.entries = [{
+    cwd: null,
+    in: null,
+    out: welcome()
+  }]
 
-    if (!dat || parts.length < 2) {
-      return prompt
+  emitter.on('cmd:change', function (cmd) {
+    state.prompt = cmd
+  })
+
+  emitter.on('cmd:enter', function (cmd) {
+    state.prompt = false
+    state.entries.push({
+      cwd: state.cwd,
+      in: cmd,
+      out: []
+    })
+
+    emitter.emit('render')
+    emitter.emit('cmd:eval', cmd.trim())
+  })
+
+  emitter.on('cmd:eval', async function (command) {
+    try {
+      var {cmd, args, opts} = parseCommand(command)
+      var mod = await loadCommand(cmd, window.location.pathname)
+      var fn = mod[args[0]] ? mod[args.shift()] : mod.default
+      var out = await fn(opts, ...args)
+      emitter.emit('cmd:out', out)
+    } catch (err) {
+      emitter.emit('cmd:err', err)
     }
-    var {archive, path} = dat
+  })
+
+  emitter.on('cmd:out', function (output) {
+    if (typeof output === 'undefined') {
+      output = ''
+    } else if (typeof output.toHTML === 'function') {
+      output = output.toHTML()
+    } else if (typeof output !== 'string' && !(output instanceof Element)) {
+      output = JSON.stringify(output).replace(/^"|"$/g, '')
+    }
+
+    state.prompt = ''
+    state.cwd = parsePath(window.location.pathname)
+    state.entries[state.entries.length - 1].out.push(output)
+    emitter.emit('render')
+
+    window.scrollTo(0, document.body.scrollHeight)
+  })
+
+  emitter.on('cmd:err', function (err) {
+    console.error(err)
+    emitter.emit('cmd:out', error(err))
+  })
+
+  emitter.on('cmd:clear', function () {
+    state.entries = []
+    emitter.emit('render')
+  })
+}
+
+function keyboard (state, emitter) {
+  document.addEventListener('keydown', function (e) {
+    if (e.code === 'Tab') {
+      e.preventDefault()
+      emitter.emit('menu:nav', e.shiftKey)
+    } else if (!e.shiftKey) {
+      emitter.emit('menu:reset')
+    }
+
+    if (e.code === 'KeyL' && e.ctrlKey) {
+      e.preventDefault()
+      emitter.emit('cmd:clear')
+    } else if (e.code === 'ArrowUp') {
+      e.preventDefault()
+      emitter.emit('hist:up')
+    } else if (e.code === 'ArrowDown') {
+      e.preventDefault()
+      emitter.emit('hist:down')
+    } else if (e.code === 'Escape' || e.code === 'KeyC' && e.ctrlKey) {
+      e.preventDefault()
+      emitter.emit('hist:reset')
+    }
+  }, {capture: true})
+}
+
+function history (state, emitter) {
+  state.history = []
+  state.history.cursor = -1
+
+  emitter.on('cmd:enter', function (cmd) {
+    if (cmd) state.history.push(cmd)
+    state.history.cursor = state.history.length
+  })
+
+  emitter.on('hist:up', function () {
+    if (state.history.cursor === -1) return ''
+    state.history.cursor = Math.max(0, state.history.cursor - 1)
+    state.prompt = state.history[state.history.cursor]
+    emitter.emit('render')
+  })
+
+  emitter.on('hist:down', function () {
+    state.history.cursor = Math.min(state.history.length, state.history.cursor + 1)
+    state.prompt = state.history[state.history.cursor] || ''
+    emitter.emit('render')
+  })
+
+  emitter.on('hist:reset', function () {
+    state.history.cursor = state.history.length
+    state.prompt = ''
+    emitter.emit('render')
+  })
+}
+
+function menu (state, emitter) {
+  state.menu = {
+    cursor: -1,
+    items: []
+  }
+
+  emitter.on('menu:nav', async function (back) {
+    if (!state.cwd || state.prompt.indexOf(' ') < 0) {
+      return
+    }
+    var {archive, path} = state.cwd
+    var parts = state.prompt.split(' ')
     var last = parts.pop()
 
-    if (this.index < 0) {
+    if (state.menu.cursor < 0) {
       var pattern = isGlob(last) ? last : last + '*'
-      var query = {
+      var menu = await glob(archive, {
         pattern: path ? joinPath(path, pattern) : pattern,
         dirs: true
-      }
-      this.menu = await glob(archive, query).collect()
-      this.menu = this.menu.map(item => relativePath(path, item)).sort()
+      }).collect()
+
+      state.menu.items = menu.map(item => relativePath(path, item)).sort()
     }
 
-    var index = back ? (this.index - 1) : (this.index + 1)
-    var item = this.menu[index]
+    var cursor = back ? (state.menu.cursor - 1) : (state.menu.cursor + 1)
+    var item = state.menu.items[cursor]
 
     if (item) {
-      this.index = index
-      return parts.join(' ') + ' ' + item
+      state.menu.cursor = cursor
+      state.prompt = parts.join(' ') + ' ' + item
+      emitter.emit('render')
     }
-    return prompt
-  },
-  reset: function () {
-    this.index = -1
-    this.menu = []
+  })
+
+  emitter.on('menu:reset', function () {
+    state.menu = []
+    state.menu.cursor = -1
+  })
+}
+
+function globals (state, emitter) {
+  window.clearHistory = function () {
+    emitter.emit('cmd:clear')
+  }
+
+  window.evalCommand = function (cmd) {
+    emitter.emit('cmd:enter', cmd)
   }
 }
 
-// helper elem
-const gt = () => {
-  var el = html`<span></span>`
-  el.innerHTML = '&gt;'
-  return el
-}
-
-// start
-// =
-
-document.addEventListener('keydown', setFocus, {capture: true})
-document.addEventListener('keydown', onKeyDown, {capture: true})
-window.addEventListener('focus', setFocus)
-updatePrompt()
-setupWindow()
-appendOutput(html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`, false)
-setFocus()
-
-// output
-// =
-
-function appendOutput (output, thenCWD, cmd) {
-  if (typeof output === 'undefined') {
-    output = ''
-  } else if (typeof output.toHTML === 'function') {
-    output = output.toHTML()
-  } else if (typeof output !== 'string' && !(output instanceof Element)) {
-    output = JSON.stringify(output).replace(/^"|"$/g, '')
-  }
-
-  var entry = html`<div class="entry"></div>`
-  var showPrompt = thenCWD !== false
-  thenCWD = thenCWD
-
-  if (showPrompt) {
-    var prompt = thenCWD ? `${shortenHash(thenCWD.key)}/${thenCWD.path}` : ''
-    entry.appendChild(html`<div class="entry-header">//${prompt}${gt()} ${cmd || ''}</div>`)
-  }
-  entry.appendChild(html`<div class="entry-content">${output}</div>`)
-
-  document.querySelector('.output').appendChild(entry)
-  window.scrollTo(0, document.body.scrollHeight)
-}
-
-function appendError (msg, err, thenCWD, cmd) {
-  appendOutput(html`
-    <div class="error">
-      <div class="error-header">${msg}</div>
-      <div class="error-stack">${err.toString()}</div>
-    </div>
-  `, thenCWD, cmd)
-}
-
-function clearHistory () {
-  document.querySelector('.output').innerHTML = ''
-}
-
-// prompt
-//
-
-function updatePrompt () {
-  var cwd = parsePath(window.location.pathname)
-  var prompt = cwd
-    ? `${shortenHash(cwd.key)}/${cwd.path}`
-    : ''
-
-  morph(document.querySelector('.prompt'), html`
-    <div class="prompt">
-      //${prompt}${gt()} <input onkeyup=${onPromptKeyUp} />
-    </div>
-  `)
-}
-
-function setFocus () {
-  document.querySelector('.prompt input').focus()
-}
-
-async function onKeyDown (e) {
-  if (e.code === 'Tab') {
-    var prompt = document.querySelector('.prompt input')
-    prompt.value = await tabCompletion.complete(prompt.value, e.shiftKey)
-  } else if (!e.shiftKey) {
-    tabCompletion.reset()
-  }
-
-  if (e.code === 'KeyL' && e.ctrlKey) {
-    e.preventDefault()
-    clearHistory()
-  } else if (e.code === 'ArrowUp') {
-    e.preventDefault()
-    document.querySelector('.prompt input').value = commandHist.prevUp()
-  } else if (e.code === 'ArrowDown') {
-    e.preventDefault()
-    document.querySelector('.prompt input').value = commandHist.prevDown()
-  } else if (e.code === 'Escape') {
-    e.preventDefault()
-    document.querySelector('.prompt input').value = ''
-    commandHist.reset()
-  }
-}
-
-function onPromptKeyUp (e) {
-  if (e.code === 'Enter') {
-    evalPrompt()
-  }
-}
-
-function evalPrompt () {
-  var prompt = document.querySelector('.prompt input')
-  if (!prompt.value.trim()) {
-    return
-  }
-  commandHist.add(prompt.value)
-  evalCommand(prompt.value)
-  prompt.value = ''
-}
-
-async function evalCommand (command) {
-  try {
-    var oldCWD = parsePath(window.location.pathname)
-    var {cmd, args, opts} = parseCommand(command)
-    var mod = await loadCommand(cmd, window.location.pathname)
-    var fn = mod[args[0]] ? mod[args.shift()] : mod.default
-    var res = await fn(opts, ...args)
-    appendOutput(res, oldCWD, command)
-  } catch (err) {
-    console.error(err)
-    appendError('Command error', err, oldCWD, command)
-  }
-  updatePrompt()
-}
-
-// environment
-// =
-
-async function setupWindow () {
-  var origin = new URL(import.meta.url).origin
-  document.head.append(html`<link rel="stylesheet" href="${origin}/assets/theme.css" />`)
-
-  window.clearHistory = clearHistory
-  window.evalCommand = evalCommand
+function debug () {
+  window.term = term
 }

@@ -1,3 +1,26 @@
+/*
+The MIT License (MIT)
+
+Copyright (c) 2014-present, Jon Schlinkert.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
 var createModuleFactory = function createModuleFactory(t){var e;return function(r){return e||t(e={exports:{},parent:r},e.exports),e.exports}};
 var _$main_139 = createModuleFactory(function (module, exports) {
 (function (setImmediate,clearImmediate){
@@ -6971,7 +6994,7 @@ var _$kindOf_63 = function kindOf(val) {
   if (type === '[object Symbol]') {
     return 'symbol';
   }
-  
+
   if (type === '[object Map Iterator]') {
     return 'mapiterator';
   }
@@ -6984,7 +7007,7 @@ var _$kindOf_63 = function kindOf(val) {
   if (type === '[object Array Iterator]') {
     return 'arrayiterator';
   }
-  
+
   // typed arrays
   if (type === '[object Int8Array]') {
     return 'int8array';
@@ -15029,13 +15052,13 @@ var __types_105 = _$lib_100.types;
 var _$safeRegex_105 = function (re, opts) {
     if (!opts) opts = {};
     var replimit = opts.limit === undefined ? 25 : opts.limit;
-    
+
     if (isRegExp(re)) re = re.source;
     else if (typeof re !== 'string') re = String(re);
-    
+
     try { re = _$lib_100(re) }
     catch (err) { return false }
-    
+
     var reps = 0;
     return (function walk (node, starHeight) {
         if (node.type === __types_105.REPETITION) {
@@ -15044,7 +15067,7 @@ var _$safeRegex_105 = function (re, opts) {
             if (starHeight > 1) return false;
             if (reps > replimit) return false;
         }
-        
+
         if (node.options) {
             for (var i = 0, len = node.options.length; i < len; i++) {
                 var ok = walk({ stack: node.options[i] }, starHeight);
@@ -15053,12 +15076,12 @@ var _$safeRegex_105 = function (re, opts) {
         }
         var stack = node.stack || (node.value && node.value.stack);
         if (!stack) return true;
-        
+
         for (var i = 0; i < stack.length; i++) {
             var ok = walk(stack[i], starHeight);
             if (!ok) return false;
         }
-        
+
         return true;
     })(re, 0);
 };
