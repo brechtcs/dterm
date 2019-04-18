@@ -41,8 +41,18 @@ function welcome () {
 function output (entry) {
   return html`<div class="entry">
     ${command(entry)}
-    <div class="entry-content">${entry.out}</div>
+    ${entry.out.map(content)}
   </div>`
+}
+
+function content (out) {
+  var el = html`<div class="entry-content"></div>`
+  if (out instanceof Element) {
+    el.appendChild(out)
+  } else {
+    el.innerHTML = out
+  }
+  return el
 }
 
 function error (err) {
@@ -107,7 +117,7 @@ function commands (state, emitter) {
   state.entries = [{
     cwd: null,
     in: null,
-    out: welcome()
+    out: [welcome()]
   }]
 
   emitter.on('cmd:change', function (cmd) {
@@ -132,13 +142,32 @@ function commands (state, emitter) {
       var mod = await loadCommand(cmd, window.location.pathname)
       var fn = mod[args[0]] ? mod[args.shift()] : mod.default
       var out = await fn(opts, ...args)
-      emitter.emit('cmd:out', out)
+      var action = out && typeof out.next === 'function'
+        ? 'cmd:stream'
+        : 'cmd:out'
+
+      emitter.emit(action, out)
     } catch (err) {
       emitter.emit('cmd:err', err)
     }
   })
 
-  emitter.on('cmd:out', function (output) {
+  emitter.on('cmd:stream', async function (it) {
+    try {
+      var next, out = await it.next()
+
+      while (true) {
+        next = await it.next()
+        emitter.emit('cmd:out', out.value, !next.done)
+        if (next.done) break
+        out = next
+      }
+    } catch (err) {
+      emitter.emit('cmd:err', err)
+    }
+  })
+
+  emitter.on('cmd:out', function (output, streaming) {
     if (typeof output === 'undefined') {
       output = ''
     } else if (typeof output.toHTML === 'function') {
@@ -147,8 +176,10 @@ function commands (state, emitter) {
       output = JSON.stringify(output).replace(/^"|"$/g, '')
     }
 
-    state.prompt = ''
-    state.cwd = parsePath(window.location.pathname)
+    if (!streaming) {
+      state.prompt = ''
+      state.cwd = parsePath(window.location.pathname)
+    }
     state.entries[state.entries.length - 1].out.push(output)
     emitter.emit('render')
 
