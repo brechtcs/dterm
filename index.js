@@ -47,8 +47,8 @@ function output (entry) {
 
 function error (err) {
   return html`<div class="error">
-    <div class="error-header">${err.msg}</div>
-    <div class="error-stack">${err.toString()}</div>
+    <div class="error-header">${err.name}</div>
+    <div class="error-stack">${err.message}</div>
   </div>`
 }
 
