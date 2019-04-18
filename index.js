@@ -221,10 +221,7 @@ function history (state, emitter) {
 }
 
 function menu (state, emitter) {
-  state.menu = {
-    cursor: -1,
-    items: []
-  }
+  state.menu = {cursor: -1}
 
   emitter.on('menu:nav', async function (back) {
     if (!state.cwd || state.prompt.indexOf(' ') < 0) {
@@ -255,8 +252,7 @@ function menu (state, emitter) {
   })
 
   emitter.on('menu:reset', function () {
-    state.menu = []
-    state.menu.cursor = -1
+    state.menu = {cursor: -1}
   })
 }
 
