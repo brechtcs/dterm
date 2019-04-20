@@ -1,5 +1,6 @@
 import control from './modules/element-controller.js'
 import glob from './modules/dat-glob.js'
+import getIterator from './modules/dterm-get-iterator.js'
 import html from './shared/nanohtml-v1.2.4.js'
 import isGlob from './shared/is-glob-v4.0.1.js'
 import joinPath from './modules/join-path.js'
@@ -150,11 +151,9 @@ function commands (state, emitter) {
       var mod = await loadCommand(cmd, window.location.pathname)
       var fn = mod[args[0]] ? mod[args.shift()] : mod.default
       var out = await fn(opts, ...args)
-      var action = out && typeof out.next === 'function'
-        ? 'cmd:stream'
-        : 'cmd:out'
-
-      emitter.emit(action, out)
+      var it = getIterator(out)
+      var action = it ? 'cmd:stream' : 'cmd:out'
+      emitter.emit(action, it || out)
     } catch (err) {
       console.error(err)
       emitter.emit('cmd:out', err)
