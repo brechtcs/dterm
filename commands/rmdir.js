@@ -1,11 +1,30 @@
-import assert from '../modules/assert.js'
+import glob from '../modules/dat-glob.js'
+import isGlob from '../shared/is-glob-v4.0.1.js'
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
 
-export default async function (opts, dst) {
-  assert(dst, 'dst is required')
+export default async function* (opts, ...patterns) {
+  opts = {recursive: opts.r || opts.recursive}
   var cwd = parsePath(window.location.pathname)
-  dst = dst.startsWith('/') ? dst : joinPath(cwd.path, dst)
-  var opts = {recursive: opts.r || opts.recursive}
-  await cwd.archive.rmdir(dst, opts)
+  var pattern, dir
+
+  for (pattern of patterns) {
+    pattern = pattern.startsWith('/') ? pattern : joinPath(cwd.path, pattern)
+
+    if (!isGlob(pattern)) {
+      yield rm(cwd.archive, pattern, opts)
+      continue
+    }
+    for await (dir of glob(cwd.archive, {pattern, dirs: true})) {
+      yield rm(cwd.archive, dir, opts)
+    }
+  }
+}
+
+async function rm (dat, dir, opts) {
+  try {
+    await dat.rmdir(dir, opts)
+  } catch (err) {
+    return err
+  }
 }

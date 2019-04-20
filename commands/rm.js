@@ -1,10 +1,29 @@
-import assert from '../modules/assert.js'
+import glob from '../modules/dat-glob.js'
+import isGlob from '../shared/is-glob-v4.0.1.js'
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
 
-export default async function (opts, dst) {
-  assert(dst, 'dst is required')
+export default async function* (opts, ...patterns) {
   var cwd = parsePath(window.location.pathname)
-  dst = dst.startsWith('/') ? dst : joinPath(cwd.path, dst)
-  await cwd.archive.unlink(dst)
+  var pattern, file
+
+  for (pattern of patterns) {
+    pattern = pattern.startsWith('/') ? pattern : joinPath(cwd.path, pattern)
+
+    if (!isGlob(pattern)) {
+      yield rm(cwd.archive, pattern)
+      continue
+    }
+    for await (file of glob(cwd.archive, pattern)) {
+      yield rm(cwd.archive, file)
+    }
+  }
+}
+
+async function rm (dat, file) {
+  try {
+    dat.unlink(file)
+  } catch (err) {
+    return err
+  }
 }

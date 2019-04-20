@@ -56,10 +56,18 @@ function content (out) {
 }
 
 function error (err) {
-  return html`<div class="error">
-    <div class="error-header">${err.name}</div>
-    <div class="error-stack">${err.message}</div>
-  </div>`
+  var error = html`<div class="error"></div>`
+  var header = html`<div class="error-header">${err.message}</div>`
+  var stack = html `<div class="error-stack"></div>`
+  stack.innerHTML = err.stack
+
+  header.addEventListener('click', function () {
+    error.classList.toggle('open')
+  })
+
+  error.appendChild(header)
+  error.appendChild(stack)
+  return error
 }
 
 function command (entry) {
@@ -148,7 +156,8 @@ function commands (state, emitter) {
 
       emitter.emit(action, out)
     } catch (err) {
-      emitter.emit('cmd:err', err)
+      console.error(err)
+      emitter.emit('cmd:out', err)
     }
   })
 
@@ -163,13 +172,16 @@ function commands (state, emitter) {
         out = next
       }
     } catch (err) {
-      emitter.emit('cmd:err', err)
+      console.error(err)
+      emitter.emit('cmd:out', err)
     }
   })
 
   emitter.on('cmd:out', function (output, streaming) {
     if (typeof output === 'undefined') {
       output = ''
+    } else if (output instanceof Error) {
+      output = error(output)
     } else if (typeof output.toHTML === 'function') {
       output = output.toHTML()
     } else if (typeof output !== 'string' && !(output instanceof Element)) {
@@ -184,11 +196,6 @@ function commands (state, emitter) {
     emitter.emit('render')
 
     window.scrollTo(0, document.body.scrollHeight)
-  })
-
-  emitter.on('cmd:err', function (err) {
-    console.error(err)
-    emitter.emit('cmd:out', error(err))
   })
 
   emitter.on('cmd:clear', function () {

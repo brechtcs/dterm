@@ -9,10 +9,13 @@ export default async function (opts, module) {
   assert(typeof mod.test === 'function')
   
   try {
+    console.time(module + ' tests')
     await mod.test(t)
   } catch (err) {
     console.error(err)
     t.passed = false
+  } finally {
+    console.timeEnd(module + ' tests')
   }
   
   if (!t.passed) {

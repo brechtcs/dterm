@@ -36,11 +36,24 @@ main {
   color: red;
 }
 
-.output .error-stack {
+.output .error .error-header::before {
+  content: '▸ ';
+}
+.output .error.open .error-header::before {
+  content: '▾ ';
+}
+
+.output .error .error-stack {
+  display: none;
   padding: 1rem;
+  margin-bottom: 1rem;
   background: pink;
-  font-weight: bold;
   font-size: 12px;
+  white-space: pre;
+  overflow-x: auto;
+}
+.output .error.open .error-stack {
+  display: block;
 }
 
 .prompt {
