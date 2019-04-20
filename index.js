@@ -1,14 +1,13 @@
+import {terminal, error, welcome} from './modules/dterm-elements.js'
 import control from './modules/element-controller.js'
 import glob from './modules/dat-glob.js'
 import getIterator from './modules/dterm-get-iterator.js'
-import html from './shared/nanohtml-v1.2.4.js'
 import isGlob from './shared/is-glob-v4.0.1.js'
 import joinPath from './modules/join-path.js'
 import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
 import relativePath from './modules/relative-path.js'
-import shortenHash from './modules/shorten-hash.js'
 
 var term = control('main')
 term.view(terminal)
@@ -24,81 +23,7 @@ term.render()
 term.emit('focus')
 
 /**
- * Elements
- */
-function terminal (state, emit) {
-  return html`<main>
-    <div class="output">
-      ${state.entries.map(output)}
-    </div>
-    ${prompt(state.cwd, state.prompt, emit)}
-  </main>`
-}
-
-function output (entry) {
-  var out, el = html`<div class="entry"></div>`
-  if (typeof entry.in === 'string') {
-    el.appendChild(prompt(entry.cwd, entry.in))
-  }
-  for (out of entry.out) {
-    el.appendChild(content(out))
-  }
-  return el
-}
-
-function content (out) {
-  var el = html`<div class="entry-content"></div>`
-  if (out instanceof Element) {
-    el.appendChild(out)
-  } else {
-    el.innerHTML = out
-  }
-  return el
-}
-
-function error (err) {
-  var el = html`<div class="error"></div>`
-  var header = html`<div class="error-header">${err.message}</div>`
-  var stack = html `<div class="error-stack"></div>`
-  stack.innerHTML = err.stack
-
-  header.addEventListener('click', function () {
-    el.classList.toggle('open')
-  })
-
-  el.appendChild(header)
-  el.appendChild(stack)
-  return el
-}
-
-function prompt (cwd, value, emit) {
-  var interactive = !!emit
-  var prompt = cwd ? `/${shortenHash(cwd.key)}/${cwd.path}` : ''
-  var input = html`<input value=${value || ''} disabled>`
-  var el = html`<div class="prompt">~${prompt} ${input}</div>`
-
-  if (value === false) el.toggleAttribute('hidden')
-  if (!interactive) return el
-
-  input.classList.add('interactive')
-  input.toggleAttribute('disabled')
-  input.addEventListener('keyup', function (e) {
-    var action = (e.code === 'Enter')
-      ? 'cmd:enter'
-      : 'cmd:change'
-    emit(action, input.value)
-  })
-
-  return el
-
-}
-
-function welcome () {
-  return html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`
-}
-
-/**
- * Stores
+ * Handlers
  */
 function render (state, emitter, term) {
   emitter.on('render', function () {
