@@ -72,13 +72,13 @@ function error (err) {
 }
 
 function prompt (cwd, value, emit) {
-  if (value === false) {
-    return ''
-  }
+  var interactive = !!emit
   var prompt = cwd ? `/${shortenHash(cwd.key)}/${cwd.path}` : ''
-  var input = html`<input value=${value} disabled>`
+  var input = html`<input value=${value || ''} disabled>`
   var el = html`<div class="prompt">~${prompt} ${input}</div>`
-  if (!emit) return el
+
+  if (value === false) el.toggleAttribute('hidden')
+  if (!interactive) return el
 
   input.classList.add('interactive')
   input.toggleAttribute('disabled')
