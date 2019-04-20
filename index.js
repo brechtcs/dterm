@@ -31,19 +31,19 @@ function terminal (state, emit) {
     <div class="output">
       ${state.entries.map(output)}
     </div>
-    ${prompt(state, emit)}
+    ${prompt(state.cwd, state.prompt, emit)}
   </main>`
 }
 
-function welcome () {
-  return html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`
-}
-
 function output (entry) {
-  return html`<div class="entry">
-    ${command(entry)}
-    ${entry.out.map(content)}
-  </div>`
+  var out, el = html`<div class="entry"></div>`
+  if (typeof entry.in === 'string') {
+    el.appendChild(prompt(entry.cwd, entry.in))
+  }
+  for (out of entry.out) {
+    el.appendChild(content(out))
+  }
+  return el
 }
 
 function content (out) {
@@ -57,34 +57,31 @@ function content (out) {
 }
 
 function error (err) {
-  var error = html`<div class="error"></div>`
+  var el = html`<div class="error"></div>`
   var header = html`<div class="error-header">${err.message}</div>`
   var stack = html `<div class="error-stack"></div>`
   stack.innerHTML = err.stack
 
   header.addEventListener('click', function () {
-    error.classList.toggle('open')
+    el.classList.toggle('open')
   })
 
-  error.appendChild(header)
-  error.appendChild(stack)
-  return error
+  el.appendChild(header)
+  el.appendChild(stack)
+  return el
 }
 
-function command (entry) {
-  if (typeof entry.in !== 'string') return ''
-  var prompt = entry.cwd ? `/${shortenHash(entry.cwd.key)}/${entry.cwd.path}` : ''
-  return  html`<div class="entry-header">~${prompt} ${entry.in}</div>`
-}
-
-
-function prompt (state, emit) {
-  if (state.prompt === false) {
+function prompt (cwd, value, emit) {
+  if (value === false) {
     return ''
   }
-  var prompt = state.cwd ? `/${shortenHash(state.cwd.key)}/${state.cwd.path}` : ''
-  var input = html`<input value=${state.prompt}>`
+  var prompt = cwd ? `/${shortenHash(cwd.key)}/${cwd.path}` : ''
+  var input = html`<input value=${value} disabled>`
+  var el = html`<div class="prompt">~${prompt} ${input}</div>`
+  if (!emit) return el
 
+  input.classList.add('interactive')
+  input.toggleAttribute('disabled')
   input.addEventListener('keyup', function (e) {
     var action = (e.code === 'Enter')
       ? 'cmd:enter'
@@ -92,9 +89,12 @@ function prompt (state, emit) {
     emit(action, input.value)
   })
 
-  return html`<div class="prompt">
-    ~${prompt} ${input}
-  </div>`
+  return el
+
+}
+
+function welcome () {
+  return html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`
 }
 
 /**
@@ -114,7 +114,7 @@ function focus (state, emitter) {
 
   function setFocus () {
     setTimeout(() => {
-      var prompt = document.querySelector('.prompt input')
+      var prompt = document.querySelector('.prompt .interactive')
       if (prompt) prompt.focus()
     })
   }

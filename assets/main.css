@@ -1,10 +1,3 @@
-/*@import "../base/reset.less";
-@import "../base/colors.less";
-@import "../base/spacing.less";
-@import "../base/typography.less";
-
-@import "../com/spinner.less";*/
-
 * {
   box-sizing: border-box;
   font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
@@ -18,13 +11,31 @@ main {
   padding: 1rem;
 }
 
-.output .entry {
-  margin-bottom: 1rem;
-}
-
-.output .entry .entry-header {
+/**
+ * Prompt
+ */
+.prompt {
+  display: flex;
   line-height: 1;
   font-size: 16px;
+}
+
+.prompt input {
+  position: relative;
+  top: -2px;
+  flex: 1;
+  line-height: 1;
+  font-size: 16px;
+  padding: 0 0 0 10px;
+  outline: 0;
+  border: 0;
+}
+
+/**
+ * Output
+ */
+.output .entry {
+  margin-bottom: 1rem;
 }
 
 .output .entry .entry-content {
@@ -56,19 +67,7 @@ main {
   display: block;
 }
 
-.prompt {
-  display: flex;
-  line-height: 1;
-  font-size: 16px;
-}
-
-.prompt input {
-  position: relative;
-  top: -2px;
-  flex: 1;
-  line-height: 1;
-  font-size: 16px;
-  padding: 0 0 0 10px;
-  outline: 0;
-  border: 0;
+.output .prompt input {
+  background-color: inherit;
+  color: inherit;
 }
