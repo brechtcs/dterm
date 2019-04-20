@@ -1,5 +1,5 @@
 export default function (obj) {
-  if (!obj || typeof obj.toHTML === 'function') {
+  if (!obj || typeof obj === 'string' || typeof obj.toHTML === 'function') {
     return undefined
   }
 
