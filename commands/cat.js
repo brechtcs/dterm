@@ -11,18 +11,18 @@ export default async function* (opts, ...patterns) {
     pattern = pattern.startsWith('/') ? pattern : joinPath(cwd.path, pattern)
 
     if (!isGlob(pattern)) {
-      yield rm(cwd.archive, pattern)
+      yield read(cwd.archive, pattern)
       continue
     }
     for await (file of glob(cwd.archive, pattern)) {
-      yield rm(cwd.archive, file)
+      yield read(cwd.archive, file)
     }
   }
 }
 
-async function rm (dat, file) {
+async function read (dat, file) {
   try {
-    dat.unlink(file)
+    return await dat.readFile(file)
   } catch (err) {
     return err
   }

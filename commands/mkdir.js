@@ -1,10 +1,19 @@
-import assert from '../modules/assert.js'
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
 
-export default async function (opts, dst) {
-  assert(dst, 'dst is required')
-  var cwd = parsePath(window.location.pathname)
-  dst = dst.startsWith('/') ? dst : joinPath(cwd.path, dst)
-  await cwd.archive.mkdir(dst)
+export default async function* (opts, ...dirs) {
+  var dir, cwd = parsePath(window.location.pathname)
+
+  for (dir of dirs) {
+    dir = dir.startsWith('/') ? dir : joinPath(cwd.path, dir)
+    yield make(cwd.archive, dir)
+  }
+}
+
+async function make (dat, dir) {
+  try {
+    await dat.mkdir(dir)
+  } catch (err) {
+    return err
+  }
 }

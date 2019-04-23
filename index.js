@@ -1,13 +1,13 @@
+import {terminal, error, welcome} from './modules/dterm-elements.js'
 import control from './modules/element-controller.js'
 import glob from './modules/dat-glob.js'
-import html from './shared/nanohtml-v1.2.4.js'
+import getIterator from './modules/dterm-get-iterator.js'
 import isGlob from './shared/is-glob-v4.0.1.js'
 import joinPath from './modules/join-path.js'
 import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
 import relativePath from './modules/relative-path.js'
-import shortenHash from './modules/shorten-hash.js'
 
 var term = control('main')
 term.view(terminal)
@@ -23,63 +23,7 @@ term.render()
 term.emit('focus')
 
 /**
- * Elements
- */
-function terminal (state, emit) {
-  return html`<main>
-    <div class="output">
-      ${state.entries.map(output)}
-    </div>
-    ${prompt(state, emit)}
-  </main>`
-}
-
-function welcome () {
-  return html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`
-}
-
-function output (entry) {
-  return html`<div class="entry">
-    ${command(entry)}
-    <div class="entry-content">${entry.out}</div>
-  </div>`
-}
-
-function error (err) {
-  return html`<div class="error">
-    <div class="error-header">${err.name}</div>
-    <div class="error-stack">${err.message}</div>
-  </div>`
-}
-
-function command (entry) {
-  if (typeof entry.in !== 'string') return ''
-  var prompt = entry.cwd ? `/${shortenHash(entry.cwd.key)}/${entry.cwd.path}` : ''
-  return  html`<div class="entry-header">~${prompt} ${entry.in}</div>`
-}
-
-
-function prompt (state, emit) {
-  if (state.prompt === false) {
-    return ''
-  }
-  var prompt = state.cwd ? `/${shortenHash(state.cwd.key)}/${state.cwd.path}` : ''
-  var input = html`<input value=${state.prompt}>`
-
-  input.addEventListener('keyup', function (e) {
-    var action = (e.code === 'Enter')
-      ? 'cmd:enter'
-      : 'cmd:change'
-    emit(action, input.value)
-  })
-
-  return html`<div class="prompt">
-    ~${prompt} ${input}
-  </div>`
-}
-
-/**
- * Stores
+ * Handlers
  */
 function render (state, emitter, term) {
   emitter.on('render', function () {
@@ -95,7 +39,7 @@ function focus (state, emitter) {
 
   function setFocus () {
     setTimeout(() => {
-      var prompt = document.querySelector('.prompt input')
+      var prompt = document.querySelector('.prompt .interactive')
       if (prompt) prompt.focus()
     })
   }
@@ -107,7 +51,7 @@ function commands (state, emitter) {
   state.entries = [{
     cwd: null,
     in: null,
-    out: welcome()
+    out: [welcome()]
   }]
 
   emitter.on('cmd:change', function (cmd) {
@@ -132,32 +76,50 @@ function commands (state, emitter) {
       var mod = await loadCommand(cmd, window.location.pathname)
       var fn = mod[args[0]] ? mod[args.shift()] : mod.default
       var out = await fn(opts, ...args)
-      emitter.emit('cmd:out', out)
+      var it = getIterator(out)
+      var action = it ? 'cmd:stream' : 'cmd:out'
+      emitter.emit(action, it || out)
     } catch (err) {
-      emitter.emit('cmd:err', err)
+      console.error(err)
+      emitter.emit('cmd:out', err)
     }
   })
 
-  emitter.on('cmd:out', function (output) {
+  emitter.on('cmd:stream', async function (it) {
+    try {
+      var next, out = await it.next()
+
+      while (true) {
+        next = await it.next()
+        emitter.emit('cmd:out', out.value, !next.done)
+        if (next.done) break
+        out = next
+      }
+    } catch (err) {
+      console.error(err)
+      emitter.emit('cmd:out', err)
+    }
+  })
+
+  emitter.on('cmd:out', function (output, streaming) {
     if (typeof output === 'undefined') {
       output = ''
+    } else if (output instanceof Error) {
+      output = error(output)
     } else if (typeof output.toHTML === 'function') {
       output = output.toHTML()
     } else if (typeof output !== 'string' && !(output instanceof Element)) {
       output = JSON.stringify(output).replace(/^"|"$/g, '')
     }
 
-    state.prompt = ''
-    state.cwd = parsePath(window.location.pathname)
+    if (!streaming) {
+      state.prompt = ''
+      state.cwd = parsePath(window.location.pathname)
+    }
     state.entries[state.entries.length - 1].out.push(output)
     emitter.emit('render')
 
     window.scrollTo(0, document.body.scrollHeight)
-  })
-
-  emitter.on('cmd:err', function (err) {
-    console.error(err)
-    emitter.emit('cmd:out', error(err))
   })
 
   emitter.on('cmd:clear', function () {
