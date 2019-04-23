@@ -21,7 +21,7 @@ export default async function (opts = {}, location = '') {
 
   await setWorkingDir(location)
 
-  if ((await getEnv()).config.lsAfterCd) {
+  if (getEnv().config.lsAfterCd) {
     return ls()
   }
 }

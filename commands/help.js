@@ -1,6 +1,6 @@
 import html from '../shared/nanohtml-v1.2.4.js'
 
-const METHOD_HELP = [
+export const METHOD_HELP = [
   {name: 'term', description: 'Configure dterm and install commands'},
   {name: 'ls', description: 'List files in the directory'},
   {name: 'cd', description: 'Change the current directory'},
@@ -16,14 +16,12 @@ const METHOD_HELP = [
 ]
 
 export default function () {
-  return {
-    toHTML() {
-      return html`<table>
-        ${METHOD_HELP.map(method => html`<tr>
-          <th style="text-align:left">${method.name}</th>
-          <td>${method.description}</td>
-        </tr>`)}
-      </table>`
-    }
-  }
+  return METHOD_HELP.map(function (method) {
+    method.toHTML = () => html`<div class="help-entry">
+      <dt>${method.name}</dt>
+      <dd>${method.description}</dd>
+    </div>`
+
+    return method
+  })
 }

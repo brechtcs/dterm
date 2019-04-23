@@ -7,7 +7,7 @@ export default async function (cmd, location) {
 }
 
 async function findCommand (cmd, location) {
-  var installed = (await getEnv()).commands[cmd]
+  var installed = getEnv().commands[cmd]
   return installed || findInArchive(cmd, location)
 }
 

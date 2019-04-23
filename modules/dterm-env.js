@@ -1,23 +1,25 @@
-import joinPath from './join-path.js'
 import {ENV_STORAGE_KEY} from './dterm-constants.js'
+import {METHOD_HELP} from '../commands/help.js'
+import joinPath from './join-path.js'
 
 var cached = null
 
-export default async function () {
-  return cached || load() || await create()
+export default function () {
+  return cached || load() || create()
 }
 
-async function create () {
+function create () {
   var origin = new URL(import.meta.url).origin
   var archive = new DatArchive(origin)
-  var env = {
-    commands: {},
+  var command, env = {
+    commands: {
+      help: joinPath(origin, 'commands/help.js')
+    },
     config: {}
   }
 
-  for (var command of await archive.readdir('commands')) {
-    var name = command.replace(/\.js$/, '')
-    env.commands[name] = joinPath(origin, 'commands', command)
+  for (command of METHOD_HELP) {
+    env.commands[command.name] = joinPath(origin, 'commands', command.name + '.js')
   }
 
   return save(env)
