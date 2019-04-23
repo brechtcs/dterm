@@ -6,7 +6,7 @@ export default async function (cmd, location) {
   return import(await findCommand(cmd, location))
 }
 
-async function findCommand (cmd, location) {
+export async function findCommand (cmd, location) {
   var installed = getEnv().commands[cmd]
   return installed || findInArchive(cmd, location)
 }

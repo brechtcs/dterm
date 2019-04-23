@@ -9,17 +9,16 @@ export default function () {
 }
 
 function create () {
-  var origin = new URL(import.meta.url).origin
-  var archive = new DatArchive(origin)
+  var key = new URL(import.meta.url).host
   var command, env = {
     commands: {
-      help: joinPath(origin, 'commands/help.js')
+      help: 'dat://' + joinPath(key, 'commands/help.js')
     },
     config: {}
   }
 
   for (command of METHOD_HELP) {
-    env.commands[command.name] = joinPath(origin, 'commands', command.name + '.js')
+    env.commands[command.name] = 'dat://' + joinPath(key, 'commands', command.name + '.js')
   }
 
   return save(env)

@@ -11,6 +11,7 @@ export const METHOD_HELP = [
   {name: 'mv', description: 'Move a file or folder'},
   {name: 'cp', description: 'Copy a file or folder'},
   {name: 'rm', description: 'Remove a file'},
+  {name: 'which', description: 'Get the source URL for a given command'},
   {name: 'clear', description: 'Clear the visible command history'},
   {name: 'exit', description: 'Close dterm window'}
 ]

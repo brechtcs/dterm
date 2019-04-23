@@ -21,7 +21,7 @@ export function install (opts, path, name) {
 
   if (!path.startsWith('dat://')) {
     var cwd = parsePath(window.location.pathname)
-    path = joinPath(cwd.archive.url, cwd.path, path)
+    path = 'dat://' + joinPath(cwd.key, cwd.path, path)
   }
   if (!name) {
     name = path.split('/').pop().replace(/\.js/, '')
