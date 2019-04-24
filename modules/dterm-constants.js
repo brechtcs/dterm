@@ -1,3 +1,6 @@
+export const DTERM_VERSION = '0.1.0'
+export const ENV_STORAGE_KEY = 'dterm-env'
+
 export const BUILTIN_COMMANDS = [
   {name: 'term', description: 'Configure dterm and install commands'},
   {name: 'ls', description: 'List files in the directory'},
@@ -13,5 +16,3 @@ export const BUILTIN_COMMANDS = [
   {name: 'clear', description: 'Clear the visible command history'},
   {name: 'exit', description: 'Close dterm window'}
 ]
-
-export const ENV_STORAGE_KEY = 'dterm-env'

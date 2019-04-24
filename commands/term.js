@@ -1,6 +1,10 @@
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
-import {ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
+import {DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
+
+export function version () {
+  return `current version: v${DTERM_VERSION}`
+}
 
 export function config (opts) {
   var env = loadEnv()
