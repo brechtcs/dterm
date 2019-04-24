@@ -7,14 +7,16 @@ import ls from './ls.js'
 export default async function (opts = {}, location = '') {
   location = location.toString()
 
-  if (location.startsWith('dat://')) {
+  if (location === '') {
+    var dat = await DatArchive.selectArchive()
+    var url = new URL(dat.url)
+    location = `/${url.host}`
+  } else if (location.startsWith('dat://')) {
     location = location.replace(/^dat:\//, '')
   } else if (location.startsWith('/')) {
     location = location.replace(/^\//, '/' + parsePath(window.location.pathname).key)
   } else if (location.startsWith('~')) {
-    location = location.startsWith('~/')
-      ? location.replace(/^~\//, '/')
-      : '/'
+    location = location.startsWith('~/') ? location.replace(/^~\//, '/') : '/'
   } else {
     location = joinPath(window.location.pathname, location)
   }

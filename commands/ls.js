@@ -7,90 +7,39 @@ import html from '../shared/nanohtml-v1.2.4.js'
 export default async function (opts = {}, location = '') {
   location = joinPath(window.location.pathname, location)
 
-  // if home dir, use library to populate
-  if (!location) {
-    var library = (await experimental.library.list())
-      .map(summarizeLibraryItem)
+  var cwd = parsePath(location)
+  var entry, listing = await cwd.archive.readdir(cwd.path, {stat: true})
 
-    library.toHTML = () => html`<div>
-      ${library.map(displayEntry)}
-    </div>`
-
-    return library
-  }
-
-  // inside archive, use directory listing
-  var {archive, path} = parsePath(location)
-  var listing = (await archive.readdir(path, {stat: true}))
-    .map(summarizeDirEntry)
-    .sort(dirsBeforeFiles)
-
-  // render
-  listing.toHTML = () => html`<div>${listing
-    .filter(filterDotfiles(opts.all || opts.a))
-    .map(displayEntry)
-  }</div>`
-
-  return listing
+  return listing.sort(order).map(entry => {
+    entry.toHTML = renderer(entry, opts.all || opts.a)
+    return entry
+  })
 }
 
-function summarizeLibraryItem (item) {
-  return {
-    name: item.url.replace(/^dat:\/\//, ''),
-    title: item.title,
-    isDir: true
-  }
-}
-
-function summarizeDirEntry (entry) {
-  return {
-    name: entry.name,
-    isDir: entry.stat.isDirectory()
-  }
-}
-
-function filterDotfiles (showAll) {
-  return function (entry) {
-    if (showAll) return true
-    return entry.name.startsWith('.') === false
-  }
-}
-
-function dirsBeforeFiles (a, b) {
-  if (a.isDir && !b.isDir) return -1
-  if (!a.isDir && b.isDir) return 1
+function order (a, b) {
+  if (a.stat.isDirectory() && !b.stat.isDirectory()) return -1
+  if (!a.stat.isDirectory() && b.stat.isDirectory()) return 1
   return a.name.localeCompare(b.name)
 }
 
-function displayEntry (entry) {
-  // coloring
-  var color = 'default'
-  if (entry.name.startsWith('.')) {
-    color = 'muted'
-  }
+function renderer (entry, all) {
+  return function () {
+    var url = 'dat:/' + joinPath(window.location.pathname, entry.name)
+    var dotfile = entry.name.startsWith('.')
 
-  function onclick (e) {
-    e.preventDefault()
-    e.stopPropagation()
-    window.evalCommand(`cd ${entry.name}`)
-  }
+    var el = html`<div class=${dotfile ? 'text-muted' : 'text-default'}></div>`
+    var link = html`<a href=${url} target="_blank">${shortenHash(entry.name)}</a>`
+    el.appendChild(link)
 
-  // render
-  var url = 'dat:/' + joinPath(window.location.pathname, entry.name)
-  var tag = entry.isDir ? 'strong' : 'span'
-  var item = html`
-    <div class="text-${color}">
-      <${tag}>
-        <a
-          href=${url}
-          onclick=${entry.isDir ? onclick : undefined}
-          target="_blank"
-        >${shortenHash(entry.name)}</a>
-      </${tag}>
-    </div>`
-
-  if (entry.title) {
-    item.appendChild(html`<small> ${entry.title}</small>`)
+    if (dotfile && !all) el.toggleAttribute('hidden')
+    if (entry.stat.isDirectory()) {
+      link.style.fontWeight = 'bold'
+      link.addEventListener('click', function (e) {
+        e.preventDefault()
+        e.stopPropagation()
+        window.evalCommand(`cd ${entry.name}`)
+      })
+    }
+    return el
   }
-  return item
 }
