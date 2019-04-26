@@ -4,10 +4,11 @@ import parsePath from '../modules/dterm-parse-path.js'
 
 import ls from './ls.js'
 
-export default async function (opts = {}, location = '') {
-  location = location.toString()
+export default async function (opts = {}, ...args) {
+  var location = getLocation(args)
+  var version = getVersion(args)
 
-  if (location === '') {
+  if (!location && !version) {
     var dat = await DatArchive.selectArchive()
     var url = new URL(dat.url)
     location = `/${url.host}`
@@ -20,12 +21,32 @@ export default async function (opts = {}, location = '') {
   } else {
     location = joinPath(window.location.pathname, location)
   }
+  if (version) {
+    location = changeVersion(location, version)
+  }
 
   await setWorkingDir(location)
 
   if (getEnv().config.lsAfterCd) {
     return ls()
   }
+}
+
+function getLocation (args) {
+  if (args.length > 1) return args[1].toString()
+  return args[0] ? args[0].toString() : ''
+}
+
+function getVersion (args) {
+  if (args.length > 1) return args[0].toString()
+}
+
+function changeVersion (location, version) {
+  version = version.replace(/^\+/, '')
+  var parts = location.split('/')
+  var key = parts[1].split('+')[0]
+  parts[1] = version === 'latest' ? key : `${key}+${version}`
+  return parts.join('/')
 }
 
 async function setWorkingDir (location) {
