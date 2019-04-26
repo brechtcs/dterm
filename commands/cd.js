@@ -9,9 +9,7 @@ export default async function (opts = {}, ...args) {
   var version = getVersion(args)
 
   if (!location && !version) {
-    var dat = await DatArchive.selectArchive()
-    var url = new URL(dat.url)
-    location = `/${url.host}`
+    location = '/'
   } else if (location.startsWith('dat://')) {
     location = location.replace(/^dat:\//, '')
   } else if (location.startsWith('/')) {
