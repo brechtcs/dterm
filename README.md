@@ -1,8 +1,9 @@
 # dterm
 
-Distributed Terminal. Provides power users with a familiar toolset for browsing and creating on the distributed web. Try it at `dat://dterm.hashbase.io` in [Beaker Browser](https://beakerbrowser.com).
+Distributed Terminal, forked from [Webterm](https://github.com/pfrazee/webterm). Provides powerful tools for browsing and creating on the distributed web. People familiar with Unix-style terminals will feel right at home!
 
-This project was forked from [Webterm](https://github.com/pfrazee/webterm).
+Try it at `dat://dterm.hashbase.io` in [Beaker Browser](https://beakerbrowser.com).
+
 
 ## Getting started
 
