@@ -1,6 +1,10 @@
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
-import {ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
+import {DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
+
+export function version () {
+  return `current version: v${DTERM_VERSION}`
+}
 
 export function config (opts) {
   var env = loadEnv()
@@ -21,7 +25,7 @@ export function install (opts, path, name) {
 
   if (!path.startsWith('dat://')) {
     var cwd = parsePath(window.location.pathname)
-    path = joinPath(cwd.archive.url, cwd.path, path)
+    path = 'dat://' + joinPath(cwd.key, cwd.path, path)
   }
   if (!name) {
     name = path.split('/').pop().replace(/\.js/, '')

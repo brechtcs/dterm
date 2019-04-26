@@ -1,40 +1,38 @@
+import {BUILTIN_COMMANDS, ENV_STORAGE_KEY} from './dterm-constants.js'
 import joinPath from './join-path.js'
-import {ENV_STORAGE_KEY} from './dterm-constants.js'
 
-var cached = null
+var env = null
 
-export default async function () {
-  return cached || load() || await create()
+export default function () {
+  return env || load() || create()
 }
 
-async function create () {
-  var origin = new URL(import.meta.url).origin
-  var archive = new DatArchive(origin)
-  var env = {
+function create () {
+  var empty = {
     commands: {},
     config: {}
   }
 
-  for (var command of await archive.readdir('commands')) {
-    var name = command.replace(/\.js$/, '')
-    env.commands[name] = joinPath(origin, 'commands', command)
-  }
-
-  return save(env)
+  return save(empty)
 }
 
 function load () {
   var saved = localStorage.getItem(ENV_STORAGE_KEY)
   if (!saved) return null
 
-  var env = JSON.parse(saved)
+  env = JSON.parse(saved)
+  var command, key = new URL(import.meta.url).host
+
+  for (command of BUILTIN_COMMANDS) {
+    env.commands[command.name] = 'dat://' + joinPath(key, 'commands', command.name + '.js')
+  }
+  env.commands.help = 'dat://' + joinPath(key, 'commands/help.js')
   Object.freeze(env.commands)
-  cached = env
+
   return env
 }
 
-function save (env) {
-  //TODO: encrypt before saving to prevent tampering
-  localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(env))
+function save (next) {
+  localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(next))
   return load()
 }

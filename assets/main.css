@@ -70,6 +70,20 @@ main {
   display: block;
 }
 
+.output .help-entry {
+  display: flex;
+}
+
+.output .help-entry dt {
+  font-weight: bold;
+  width: 2rem;
+}
+
+.output .help-entry dd {
+  flex: 1;
+  text-overflow: ellipsis;
+}
+
 .output .prompt input {
   background-color: inherit;
   color: inherit;

@@ -1,16 +1,39 @@
-# Dterm
+# dterm
 
-Distributed Terminal. Provides power users with a familiar toolset for browsing and creating on the distributed web. Forked from [Webterm](https://github.com/pfrazee/webterm).
+Distributed Terminal. Provides power users with a familiar toolset for browsing and creating on the distributed web. Try it at `dat://dterm.hashbase.io` in [Beaker Browser](https://beakerbrowser.com).
 
-Try it in [Beaker Browser](https://beakerbrowser.com):
+This project was forked from [Webterm](https://github.com/pfrazee/webterm).
 
+## Getting started
+
+When opening dterm, you have to navigate into the dat archive you want to work with. For this you can use `cd <dat-key-or-domain>`. Alternatively, you can call `dat ls` which will display a list of dats available from your Beaker library.
+
+For this tutorial though, let's create an empty archive. The following command will open Beaker's "New archive" modal, and navigate to the newly created dat when you confirm:
+
+```bash
+> dat create --title="Hello World! --description="Getting started with dterm"
 ```
-dat://dterm.hashbase.io/
+
+Let's create our first command in this archive. When evaluating a prompt, dterm will look for corresponding commands in the archive's `/commands` folder. So let's create that one first:
+
+```bash
+> mdkir commands
 ```
 
-## Example commands
+To create our new command in this folder, we'll also need a text editor. The following commands will one for you:
 
-Here is a minimal hello world example:
+```bash
+> term install dat://dcode.hashbase.io/commands/code.js
+# A basic editor based on CodeMirror
+
+> term install dat://dcode.hashbase.io/commands/emacs.js
+# Same, but with Emacs keybindings
+
+> term install dat://dcode.hashbase.io/commands/vim.js
+# Same, but with vim keybindings
+```
+
+After this, run `code commands/hello-world.js` (or vim/emacs if that's what you went for) and an editor window will open in a new tab. Enter the following code to define a basic command and press `Control-S` (or the corresponding vim/emacs command) to save:
 
 ```js
 // hello-world.js
@@ -19,22 +42,22 @@ export default function () {
 }
 ```
 
-Invocation:
+As you see, our command is a basic ES module file. When invoked, dterm will execute the default export function like so:
 
 ```bash
 > hello-world
 Hello, world!
 ```
 
----
+## Defining commands
 
-**Arguments**
+### Arguments
 
 All command modules export a default function which accepts an options object and positional arguments, and returns a JS value or object. Here's an example which echos the arguments:
 
 ```js
 // echo.js
-function main (opts, ...args) {
+export default function (opts, ...args) {
   return JSON.stringify(opts) + args.join(' ')
 }
 ```
@@ -46,9 +69,7 @@ Invocation:
 {"a": true, "b": true, "c": true, "hello": "world"} this is my echo
 ```
 
----
-
-**Subcommands**
+### Subcommands
 
 All non-default exports on a command module can be accessed as subcommands. This is a help function for the above `echo` example:
 
@@ -66,25 +87,7 @@ Invocation:
 echo <opts> [...args]
 ```
 
-**Globals**
-
-A `globals` object provides information about the environment.
-
-```js
-// pwd.js
-export default function () {
-  return globals.cwd
-}
-```
-Invocation:
-```bash
-> pwd
-dat://beakerbrowser.com/docs/
-```
-
----
-
-**Rendering**
+### Rendering
 
 The command may specify a `toHTML` function on the response object. This method will be invoked if/when the output is rendered to the cli.
 
@@ -97,55 +100,7 @@ export default function () {
 }
 ```
 
-The output can not include custom CSS. The CLI will provide a set of HTML constructs which it themes, and may even provided limited interactivity for exploring the output.
-
----
-
-**Sub-invocations**
-
-Commands can be composed by sub-invocations. Sub-invocations are command-invocations which are wrapped in parenthesis: `'(' invocation ')'`. They will be evaluated, and their value will be substituted in-place for their parent's invocation.
-
-```js
-// change-case.js
-export default function (opts, str) {
-  str = str.toString()
-  if (opts.u) return str.toUpperCase()
-  if (opts.l) return str.toLowerCase()
-  return str
-}
-```
-Invocation:
-```bash
-> change-case -u (hello-world)
-HELLO, WORLD!
-# this is equivalent to running change-case -u "Hello, world!"
-```
-
-This can be used multiple times in an invocation, and nested arbitrarily:
-
-```js
-// concat.js
-export default function (opts, left, right) {
-  return left.toString() + ' ' + right.toString()
-}
-```
-Invocation:
-```bash
-> concat (hello-world) (hello-world)
-Hello, world! Hello, world!
-
-> concat (change-case -u (hello-world)) (change-case -l (hello-world))
-HELLO, WORLD! hello, world!
-
-> change-case -u (change-case -l (change-case -u (hello-world)))
-HELLO, WORLD!
-```
-
-Sub-invocations are evaluated sequentially, to avoid potential races from side-effects (eg multiple sub-invocations using interactivity features).
-
----
-
-**Async**
+### Async
 
 Commands may be async.
 
@@ -156,22 +111,38 @@ export default async function (opts) {
 }
 ```
 
----
+### Streams
 
-**Interactivity**
-
-Commands may use the `terminal` API to provide interactivity during their invocation.
+Commands can return iterators. These will be rendered item-per-item as streams.
 
 ```js
-// new-profile.js
-export default async function () {
-  var name = await terminal.prompt('What is your name?')
-  var bio = await terminal.prompt('What is your bio?')
-  terminal.output(`You are ${name}. Bio: ${bio}`)
-  var shouldPublish = await terminal.confirm('Publish?', true)
-  if (shouldPublish) {
-    await ...
-    terminal.output('Published')
+export default function* (opts) {
+  var n = Number(opts.n) || 0
+
+  for (var i = 0; i < n; i++) {
+    yield 'streaming: ' + (i + 1)
   }
 }
 ```
+
+### Errors
+
+Any `Error` instances returned (or yielded) by the command will be rendered as errors in the terminal.
+
+```js
+export default function (opts, file) {
+  try {
+    return await archive.readFile(file)
+  } catch (err) {
+    return err
+  }
+}
+```
+
+## Builtins
+
+A range of commands for basic operations is already included in dterm out of the box. Enter `help` in your terminal to get a complete overview.
+
+## License
+
+MIT
