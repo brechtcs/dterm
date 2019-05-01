@@ -146,4 +146,4 @@ A range of commands for basic operations is already included in dterm out of the
 
 ## License
 
-MIT
+AGPL-v3.0 (previously [MIT](https://github.com/dterm/dterm/releases/tag/MIT))
