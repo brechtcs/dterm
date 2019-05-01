@@ -1,7 +1,8 @@
 import {terminal, error, welcome} from './modules/dterm-elements.js'
-import control from './modules/element-controller.js'
+import {loadHome, getEnv} from './modules/dterm-home.js'
+import control from './modules/dterm-controller.js'
 import glob from './modules/dat-glob.js'
-import getIterator from './modules/dterm-get-iterator.js'
+import getStream from './modules/dterm-stream.js'
 import isGlob from './shared/is-glob-v4.0.1.js'
 import joinPath from './modules/join-path.js'
 import loadCommand from './modules/dterm-load-command.js'
@@ -13,14 +14,13 @@ var term = control('main')
 term.view(terminal)
 term.use(render)
 term.use(focus)
+term.use(env)
 term.use(commands)
 term.use(keyboard)
 term.use(history)
 term.use(menu)
-term.use(globals)
 term.use(debug)
-term.render()
-term.emit('focus')
+term.mount()
 
 /**
  * Handlers
@@ -38,16 +38,39 @@ function focus (state, emitter) {
   window.addEventListener('focus', setFocus)
 
   function setFocus () {
-    setTimeout(() => {
-      var prompt = document.querySelector('.prompt .interactive')
-      if (prompt) prompt.focus()
-    })
+    var prompt = document.querySelector('.prompt .interactive')
+    if (prompt) prompt.focus()
+  }
+}
+
+async function env (state, emitter, term) {
+  state.prompt = false
+  state.cwd = null
+  state.home = null
+  state.env = null
+
+  window.getEnv = function () {
+    return state.env
+  }
+
+  window.getHome = function () {
+    return state.home
+  }
+
+  try {
+    state.home = Object.freeze(await loadHome())
+    state.env = Object.freeze(getEnv())
+    state.cwd = parsePath(window.location.pathname)
+    state.prompt = ''
+
+    emitter.emit('render')
+    emitter.emit('focus')
+  } catch (err) {
+    emitter.emit('cmd:out', err, true)
   }
 }
 
 function commands (state, emitter) {
-  state.cwd = parsePath(window.location.pathname)
-  state.prompt = ''
   state.entries = [{
     cwd: null,
     in: null,
@@ -76,9 +99,9 @@ function commands (state, emitter) {
       var mod = await loadCommand(cmd, window.location.pathname)
       var fn = mod[args[0]] ? mod[args.shift()] : mod.default
       var out = await fn(opts, ...args)
-      var it = getIterator(out)
-      var action = it ? 'cmd:stream' : 'cmd:out'
-      emitter.emit(action, it || out)
+      var stream = getStream(out)
+      var action = stream ? 'cmd:stream' : 'cmd:out'
+      emitter.emit(action, stream || out)
     } catch (err) {
       console.error(err)
       emitter.emit('cmd:out', err)
@@ -101,7 +124,7 @@ function commands (state, emitter) {
     }
   })
 
-  emitter.on('cmd:out', function (output, streaming) {
+  emitter.on('cmd:out', function (output, ongoing) {
     if (typeof output === 'undefined') {
       output = ''
     } else if (output instanceof Error) {
@@ -112,7 +135,7 @@ function commands (state, emitter) {
       output = JSON.stringify(output).replace(/^"|"$/g, '')
     }
 
-    if (!streaming) {
+    if (!ongoing) {
       state.prompt = ''
       state.cwd = parsePath(window.location.pathname)
     }
@@ -126,6 +149,14 @@ function commands (state, emitter) {
     state.entries = []
     emitter.emit('render')
   })
+
+  window.clearHistory = function () {
+    emitter.emit('cmd:clear')
+  }
+
+  window.evalCommand = function (cmd) {
+    emitter.emit('cmd:enter', cmd)
+  }
 }
 
 function keyboard (state, emitter) {
@@ -192,9 +223,15 @@ function menu (state, emitter) {
     var {archive, path} = state.cwd
     var parts = state.prompt.split(' ')
     var last = parts.pop()
+    var pattern = isGlob(last) ? last : last + '*'
+
+    if (last.startsWith('~')) {
+      archive = state.home.archive
+      path = state.home.path
+      pattern = pattern.slice(1).replace(/^\//, '')
+    }
 
     if (state.menu.cursor < 0) {
-      var pattern = isGlob(last) ? last : last + '*'
       var menu = await glob(archive, {
         pattern: path ? joinPath(path, pattern) : pattern,
         dirs: true
@@ -207,6 +244,7 @@ function menu (state, emitter) {
     var item = state.menu.items[cursor]
 
     if (item) {
+      item = last.startsWith('~') ? '~/' + item : item
       state.menu.cursor = cursor
       state.prompt = parts.join(' ') + ' ' + item
       emitter.emit('render')
@@ -216,16 +254,6 @@ function menu (state, emitter) {
   emitter.on('menu:reset', function () {
     state.menu = {cursor: -1}
   })
-}
-
-function globals (state, emitter) {
-  window.clearHistory = function () {
-    emitter.emit('cmd:clear')
-  }
-
-  window.evalCommand = function (cmd) {
-    emitter.emit('cmd:enter', cmd)
-  }
 }
 
 function debug () {

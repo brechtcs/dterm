@@ -1,3 +1,4 @@
+import {getHome} from './dterm-home.js'
 import html from '../shared/nanohtml-v1.2.4.js'
 import shortenHash from './shorten-hash.js'
 
@@ -27,15 +28,15 @@ export function error (err) {
 
 export function prompt (cwd, value, emit) {
   var interactive = !!emit
-  var prompt = cwd ? `/${shortenHash(cwd.key)}/${cwd.path}` : ''
+  var prompt = (cwd && cwd.key != getHome().key ? `/${shortenHash(cwd.key)}` : '') + (cwd && cwd.path ? '/' + cwd.path : '')
   var input = html`<input value=${value || ''} disabled>`
   var el = html`<div class="prompt">~${prompt} ${input}</div>`
 
-  if (value === false) el.toggleAttribute('hidden')
+  if (value === false) el.setAttribute('hidden', '')
   if (!interactive) return el
 
   input.classList.add('interactive')
-  input.toggleAttribute('disabled')
+  input.removeAttribute('disabled')
   input.addEventListener('keyup', function (e) {
     var action = (e.code === 'Enter')
       ? 'cmd:enter'

@@ -11,23 +11,28 @@ class ElementController {
   constructor (selector) {
     this.bus = nanobus()
     this.init = []
+    this.selector = selector
     this.state = {}
-
-    ready(() => {
-      this.el = document.querySelector(selector)
-    })
   }
 
   emit () {
     this.bus.emit(...arguments)
   }
 
+  mount (selector) {
+    ready(() => {
+      this.el = document.querySelector(selector || this.selector)
+      this.el.controller = this
+      this.el.isSameNode = target => target.controller === this
+      delete this.selector
+    })
+
+    this.init.forEach(store => store(this.state))
+    Object.seal(this.state)
+    delete this.init
+  }
+
   render () {
-    if (this.init) {
-      this.init.forEach(store => store(this.state))
-      Object.seal(this.state)
-      delete this.init
-    }
     if (this.el === undefined) {
       return ready(this.render.bind(this))
     }

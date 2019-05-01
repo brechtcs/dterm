@@ -5,15 +5,15 @@ export default function join (...args) {
   var root = args[0].startsWith('/')
   var parts = args.map(split).flat().filter(empty)
   var i, next, path = root ? [''] : []
-  
+
   for (i = 0; i < parts.length; i++) {
     next = parts[i]
-    
+
     if (skip(next)) {
       if (next === '..') path.pop()
       continue
     }
-    
+
     if (next.startsWith('/')) {
       next = next.slice(1)
     }
@@ -22,7 +22,7 @@ export default function join (...args) {
     }
     path.push(next)
   }
-  
+
   return path.join('/')
 }
 
@@ -53,6 +53,6 @@ export function test (t) {
     "join('arf', '../yarf/barf') === 'yarf/barf'",
     "join('', 'gnarf/barf') === 'gnarf/barf'"
   ]
-  
+
   cases.forEach(c => t.ok(eval(c), c))
 }

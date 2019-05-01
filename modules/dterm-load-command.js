@@ -1,6 +1,6 @@
-import getEnv from '../modules/dterm-env.js'
-import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import {getHome, getEnv} from './dterm-home.js'
+import joinPath from './join-path.js'
+import parsePath from './dterm-parse-path.js'
 
 export default async function (cmd, location) {
   return import(await findCommand(cmd, location))
@@ -8,25 +8,27 @@ export default async function (cmd, location) {
 
 export async function findCommand (cmd, location) {
   var installed = getEnv().commands[cmd]
-  return installed || findInArchive(cmd, location)
+
+  if (installed) {
+    return installed
+  }
+  try {
+    try {
+      return await findInArchive(parsePath(location), cmd)
+    } catch (err) {
+      return await findInArchive(getHome(), cmd)
+    }
+  } catch (err) {
+    throw new Error(cmd + ': command not found')
+  }
 }
 
-async function findInArchive (cmd, location) {
-  var path, stat, cwd = parsePath(location)
+async function findInArchive (cwd, cmd) {
+  var path = joinPath('commands', cmd + '.js')
+  var stat = await cwd.archive.stat(path)
 
-  try {
-    path = joinPath('commands', cmd + '.js')
-    stat = await cwd.archive.stat(path)
-  } catch (err) {
-    throw new Error(getError(cmd))
-  }
   if (stat.isDirectory()) {
     throw new Error(getError(cmd))
   }
-
   return `dat://${cwd.key}/${path}`
-}
-
-function getError (cmd) {
-  return cmd + ': command not found'
 }
