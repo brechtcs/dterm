@@ -28,9 +28,9 @@ export function error (err) {
 
 export function prompt (cwd, value, emit) {
   let interactive = !!emit
-  let prompt = (cwd && cwd.key != getHome().key ? `/${shortenHash(cwd.key)}` : '') + (cwd && cwd.path ? '/' + cwd.path : '')
+  let prompt = (cwd && cwd.key != getHome().key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
   let input = html`<input value=${value || ''} disabled>`
-  let el = html`<div class="prompt">~${prompt} ${input}</div>`
+  let el = html`<div class="prompt">${prompt} ${input}</div>`
 
   if (value === false) el.setAttribute('hidden', '')
   if (!interactive) return el
