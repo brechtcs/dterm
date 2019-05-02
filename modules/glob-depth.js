@@ -9,17 +9,3 @@ export default function depth (pattern) {
   }
   return parts.length
 }
-
-/**
- * Tests
- */
-export function test (t) {
-  var cases = [
-    "depth('arf/barf/**/*.md') === Infinity",
-    "depth('arf/barf/af.{md.txt}') === 3",
-    "depth('arf/barf/*.txt') === 3",
-    "depth('*') === 1"
-  ]
-
-  cases.forEach(c => t.ok(eval(c), c))
-}

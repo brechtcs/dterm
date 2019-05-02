@@ -33,24 +33,3 @@ function normalize (base) {
   }
   return base
 }
-
-/**
- * Tests
- */
-export async function test (t) {
-  var key = new URL(import.meta.url).hostname
-  var dat = await DatArchive.load(key)
-  var file, walked = []
-
-  for await (file of walk(dat)) {
-    t.ok(await dat.stat(file), 'deep walk: ' + file)
-    walked.push(file)
-  }
-
-  t.ok(walked.includes('dat.json'), 'includes dat.json')
-  t.ok(walked.includes('modules/dat-walk.js'), 'includes modules/dat-walk.js')
-
-  for await (file of walk(dat, {depth: 1})) {
-    t.ok(file.split('/').length === 1, 'shallow walk: ' + file)
-  }
-}
