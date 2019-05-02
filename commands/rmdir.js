@@ -5,8 +5,8 @@ import parsePath from '../modules/dterm-parse-path.js'
 
 export default async function* (opts, ...patterns) {
   opts = {recursive: opts.r || opts.recursive}
-  var cwd = parsePath(window.location.pathname)
-  var pattern, dir
+  let cwd = parsePath(window.location.pathname)
+  let pattern, dir
 
   for (pattern of patterns) {
     pattern = pattern.startsWith('/') ? pattern : joinPath(cwd.path, pattern)

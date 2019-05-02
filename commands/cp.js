@@ -8,7 +8,7 @@ export default async function* (opts, src, dst) {
   assert(src, 'src is required')
   assert(dst, 'dst is required')
 
-  var cwd = parsePath(window.location.pathname)
+  let cwd = parsePath(window.location.pathname)
   src = src.startsWith('/') ? src : joinPath(cwd.path, src)
   dst = dst.startsWith('/') ? dst : joinPath(cwd.path, dst)
 
@@ -16,8 +16,8 @@ export default async function* (opts, src, dst) {
     yield copy(cwd.archive, src, dst)
     return
   }
-  for await (var file of glob(cwd.archive, src)) {
-    var base = file.split('/').pop()
+  for await (let file of glob(cwd.archive, src)) {
+    let base = file.split('/').pop()
     yield copy(cwd.archive, file, joinPath(dst, base))
   }
 }

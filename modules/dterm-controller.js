@@ -36,7 +36,7 @@ class ElementController {
     if (this.el === undefined) {
       return ready(this.render.bind(this))
     }
-    var page = this.factory(this.state, this.emit.bind(this))
+    let page = this.factory(this.state, this.emit.bind(this))
     assert(page instanceof Element, 'view must return Element')
     nanomorph(this.el, page)
   }

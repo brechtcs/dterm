@@ -1,10 +1,10 @@
 import walk from '../modules/dat-walk.js'
 
-var key = new URL(import.meta.url).hostname
+let key = new URL(import.meta.url).hostname
 
 export async function deepWalk (t) {
-  var dat = await DatArchive.load(key)
-  var file, walked = []
+  let dat = await DatArchive.load(key)
+  let file, walked = []
 
   for await (file of walk(dat)) {
     t.ok(await dat.stat(file), 'walked: ' + file)
@@ -17,8 +17,8 @@ export async function deepWalk (t) {
 }
 
 export async function shallowWalk (t) {
-  var dat = await DatArchive.load(key)
-  var file, walked = []
+  let dat = await DatArchive.load(key)
+  let file, walked = []
 
   for await (file of walk(dat, {depth: 1})) {
     t.ok(file.split('/').length === 1, 'walked: ' + file)

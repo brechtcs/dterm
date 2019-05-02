@@ -2,9 +2,9 @@ import assert from './assert.js'
 
 export default function join (...args) {
   assert(args.length, 'must pass in path arguments to join')
-  var root = args[0].startsWith('/')
-  var parts = args.map(split).flat().filter(empty)
-  var i, next, path = root ? [''] : []
+  let root = args[0].startsWith('/')
+  let parts = args.map(split).flat().filter(empty)
+  let i, next, path = root ? [''] : []
 
   for (i = 0; i < parts.length; i++) {
     next = parts[i]

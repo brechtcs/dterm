@@ -5,9 +5,9 @@ import resolvePath from '../modules/dterm-resolve-path.js'
 import ls from './ls.js'
 
 export default async function (opts = {}, ...args) {
-  var cwd = parsePath(window.location.pathname)
-  var location = getLocation(args)
-  var version = getVersion(args)
+  let cwd = parsePath(window.location.pathname)
+  let location = getLocation(args)
+  let version = getVersion(args)
 
   location = resolvePath(getHome(), cwd, location)
   location = changeVersion(location, version)
@@ -30,14 +30,14 @@ function getVersion (args) {
 function changeVersion (location, version) {
   if (!version) return location
   version = version.replace(/^\+/, '')
-  var parts = location.split('/')
-  var key = parts[1].split('+')[0]
+  let parts = location.split('/')
+  let key = parts[1].split('+')[0]
   parts[1] = version === 'latest' ? key : `${key}+${version}`
   return parts.join('/')
 }
 
 async function setWorkingDir (location) {
-  var cwd = parsePath(location)
+  let cwd = parsePath(location)
 
   if (cwd) {
     // make sure the destination exists

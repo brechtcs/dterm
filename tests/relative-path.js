@@ -1,7 +1,7 @@
 import relative from '../modules/relative-path.js'
 
 export function relativePath (t) {
-  var cases = [
+  let cases = [
     "relative('arf/barf/gnarf', 'arf/yarf/blarf') === '../../yarf/blarf'",
     "relative('barf/gnarf', 'arf/yarf') === '../../arf/yarf'",
     "relative('barf/gnarf/yarf', 'barf/gnarf') === '..'",

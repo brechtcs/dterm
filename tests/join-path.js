@@ -1,7 +1,7 @@
 import join from '../modules/join-path.js'
 
 export function joinPath (t) {
-  var cases = [
+  let cases = [
     "join('/arf/barf', 'gnarf') === '/arf/barf/gnarf'",
     "join('/', 'yarf/gnarf') === '/yarf/gnarf'",
     "join('arf/barf', 'gnarf') === 'arf/barf/gnarf'",

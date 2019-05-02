@@ -4,8 +4,8 @@ import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
 
 export default async function* (opts, ...patterns) {
-  var cwd = parsePath(window.location.pathname)
-  var pattern, file
+  let cwd = parsePath(window.location.pathname)
+  let pattern, file
 
   for (pattern of patterns) {
     pattern = pattern.startsWith('/') ? pattern : joinPath(cwd.path, pattern)

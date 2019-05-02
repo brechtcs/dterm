@@ -5,7 +5,7 @@ import parent from './glob-parent.js'
 import walk from './dat-walk.js'
 
 export default function glob (dat, opts) {
-  var glob, it
+  let glob, it
   if (typeof opts === 'string' || Array.isArray(opts)) {
     glob = opts
     opts = {}
@@ -21,8 +21,8 @@ export default function glob (dat, opts) {
 async function* match (dat, glob, opts) {
   assert(typeof glob === 'string' || Array.isArray(glob), 'Invalid glob pattern')
 
-  var file, base = Array.isArray(glob) ? '' : parent(glob)
-  var walkOpts = Object.assign({ base }, opts)
+  let file, base = Array.isArray(glob) ? '' : parent(glob)
+  let walkOpts = Object.assign({ base }, opts)
   if (!Array.isArray(glob)) {
     walkOpts.depth = depth(glob)
   }
@@ -32,8 +32,8 @@ async function* match (dat, glob, opts) {
 }
 
 async function collect (it) {
-  var match
-  var list = []
+  let match
+  let list = []
 
   for await (match of it) {
     list.push(match)

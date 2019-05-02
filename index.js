@@ -10,7 +10,7 @@ import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
 import relativePath from './modules/relative-path.js'
 
-var term = control('main')
+let term = control('main')
 term.view(terminal)
 term.use(render)
 term.use(focus)
@@ -38,7 +38,7 @@ function focus (state, emitter) {
   window.addEventListener('focus', setFocus)
 
   function setFocus () {
-    var prompt = document.querySelector('.prompt .interactive')
+    let prompt = document.querySelector('.prompt .interactive')
     if (prompt) prompt.focus()
   }
 }
@@ -95,12 +95,12 @@ function commands (state, emitter) {
 
   emitter.on('cmd:eval', async function (command) {
     try {
-      var {cmd, args, opts} = parseCommand(command)
-      var mod = await loadCommand(cmd, window.location.pathname)
-      var fn = mod[args[0]] ? mod[args.shift()] : mod.default
-      var out = await fn(opts, ...args)
-      var stream = getStream(out)
-      var action = stream ? 'cmd:stream' : 'cmd:out'
+      let {cmd, args, opts} = parseCommand(command)
+      let mod = await loadCommand(cmd, window.location.pathname)
+      let fn = mod[args[0]] ? mod[args.shift()] : mod.default
+      let out = await fn(opts, ...args)
+      let stream = getStream(out)
+      let action = stream ? 'cmd:stream' : 'cmd:out'
       emitter.emit(action, stream || out)
     } catch (err) {
       console.error(err)
@@ -110,7 +110,7 @@ function commands (state, emitter) {
 
   emitter.on('cmd:stream', async function (it) {
     try {
-      var next, out = await it.next()
+      let next, out = await it.next()
 
       while (true) {
         next = await it.next()
@@ -220,10 +220,10 @@ function menu (state, emitter) {
     if (!state.cwd || state.prompt.indexOf(' ') < 0) {
       return
     }
-    var {archive, path} = state.cwd
-    var parts = state.prompt.split(' ')
-    var last = parts.pop()
-    var pattern = isGlob(last) ? last : last + '*'
+    let {archive, path} = state.cwd
+    let parts = state.prompt.split(' ')
+    let last = parts.pop()
+    let pattern = isGlob(last) ? last : last + '*'
 
     if (last.startsWith('~')) {
       archive = state.home.archive
@@ -232,7 +232,7 @@ function menu (state, emitter) {
     }
 
     if (state.menu.cursor < 0) {
-      var menu = await glob(archive, {
+      let menu = await glob(archive, {
         pattern: path ? joinPath(path, pattern) : pattern,
         dirs: true
       }).collect()
@@ -240,8 +240,8 @@ function menu (state, emitter) {
       state.menu.items = menu.map(item => relativePath(path, item)).sort()
     }
 
-    var cursor = back ? (state.menu.cursor - 1) : (state.menu.cursor + 1)
-    var item = state.menu.items[cursor]
+    let cursor = back ? (state.menu.cursor - 1) : (state.menu.cursor + 1)
+    let item = state.menu.items[cursor]
 
     if (item) {
       item = last.startsWith('~') ? '~/' + item : item

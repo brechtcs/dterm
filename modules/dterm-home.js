@@ -1,24 +1,24 @@
 import {DTERM_HOME, BUILTIN_COMMANDS} from './dterm-constants.js'
 import joinPath from './join-path.js'
 
-var home = null
-var env = null
+let home = null
+let env = null
 
 export async function loadHome () {
-  var url = localStorage.getItem(DTERM_HOME)
+  let url = localStorage.getItem(DTERM_HOME)
 
   if (url) {
     return setHome(new DatArchive(url))
   }
-  var env = {commands: {}, config: {}}
-  var command, host = new URL(import.meta.url).host
+  let env = {commands: {}, config: {}}
+  let command, host = new URL(import.meta.url).host
 
   for (command of BUILTIN_COMMANDS) {
     env.commands[command.name] = 'dat://' + joinPath(host, 'commands', command.name + '.js')
   }
   env.commands.help = 'dat://' + joinPath(host, 'commands/help.js')
 
-  var archive = await DatArchive.create({
+  let archive = await DatArchive.create({
     title: 'dterm home',
     description: 'Home archive for dterm',
     type: 'dterm-home'
@@ -42,7 +42,7 @@ export function getHome () {
 }
 
 async function setEnv (archive) {
-  var term = await archive.readFile('term.json')
+  let term = await archive.readFile('term.json')
   env = JSON.parse(term)
   return env
 }

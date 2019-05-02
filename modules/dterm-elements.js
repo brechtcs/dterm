@@ -12,9 +12,9 @@ export function terminal (state, emit) {
 }
 
 export function error (err) {
-  var el = html`<div class="error"></div>`
-  var header = html`<div class="error-header">${err.message}</div>`
-  var stack = html `<div class="error-stack"></div>`
+  let el = html`<div class="error"></div>`
+  let header = html`<div class="error-header">${err.message}</div>`
+  let stack = html `<div class="error-stack"></div>`
   stack.innerHTML = err.stack
 
   header.addEventListener('click', function () {
@@ -27,10 +27,10 @@ export function error (err) {
 }
 
 export function prompt (cwd, value, emit) {
-  var interactive = !!emit
-  var prompt = (cwd && cwd.key != getHome().key ? `/${shortenHash(cwd.key)}` : '') + (cwd && cwd.path ? '/' + cwd.path : '')
-  var input = html`<input value=${value || ''} disabled>`
-  var el = html`<div class="prompt">~${prompt} ${input}</div>`
+  let interactive = !!emit
+  let prompt = (cwd && cwd.key != getHome().key ? `/${shortenHash(cwd.key)}` : '') + (cwd && cwd.path ? '/' + cwd.path : '')
+  let input = html`<input value=${value || ''} disabled>`
+  let el = html`<div class="prompt">~${prompt} ${input}</div>`
 
   if (value === false) el.setAttribute('hidden', '')
   if (!interactive) return el
@@ -38,7 +38,7 @@ export function prompt (cwd, value, emit) {
   input.classList.add('interactive')
   input.removeAttribute('disabled')
   input.addEventListener('keyup', function (e) {
-    var action = (e.code === 'Enter')
+    let action = (e.code === 'Enter')
       ? 'cmd:enter'
       : 'cmd:change'
     emit(action, input.value)
@@ -56,7 +56,7 @@ export function welcome () {
  * Private elements
  */
 function output (entry) {
-  var out, el = html`<div class="entry"></div>`
+  let out, el = html`<div class="entry"></div>`
   if (typeof entry.in === 'string') {
     el.appendChild(prompt(entry.cwd, entry.in))
   }
@@ -67,7 +67,7 @@ function output (entry) {
 }
 
 function content (out) {
-  var el = html`<div class="entry-content"></div>`
+  let el = html`<div class="entry-content"></div>`
   if (out instanceof Element) {
     el.appendChild(out)
   } else {

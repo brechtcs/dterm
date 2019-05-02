@@ -7,7 +7,7 @@ export default async function (cmd, location) {
 }
 
 export async function findCommand (cmd, location) {
-  var installed = getEnv().commands[cmd]
+  let installed = getEnv().commands[cmd]
 
   if (installed) {
     return installed
@@ -24,8 +24,8 @@ export async function findCommand (cmd, location) {
 }
 
 async function findInArchive (cwd, cmd) {
-  var path = joinPath('commands', cmd + '.js')
-  var stat = await cwd.archive.stat(path)
+  let path = joinPath('commands', cmd + '.js')
+  let stat = await cwd.archive.stat(path)
 
   if (stat.isDirectory()) {
     throw new Error(getError(cmd))

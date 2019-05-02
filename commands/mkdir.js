@@ -2,7 +2,7 @@ import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
 
 export default async function* (opts, ...dirs) {
-  var dir, cwd = parsePath(window.location.pathname)
+  let dir, cwd = parsePath(window.location.pathname)
 
   for (dir of dirs) {
     dir = dir.startsWith('/') ? dir : joinPath(cwd.path, dir)

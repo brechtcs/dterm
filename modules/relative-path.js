@@ -1,16 +1,16 @@
 export default function relative (from, to) {
-  var fromParts = from ? from.split('/') : []
-  var toParts = to ? to.split('/') : []
-  var relParts = []
-  var baseCount = 0
+  let fromParts = from ? from.split('/') : []
+  let toParts = to ? to.split('/') : []
+  let relParts = []
+  let baseCount = 0
 
-  for (var i = 0; i < toParts.length; i++) {
+  for (let i = 0; i < toParts.length; i++) {
     if (fromParts[i] !== toParts[i]) {
       break
     }
     baseCount++
   }
-  for (var i = 0; i < fromParts.length - baseCount; i++) {
+  for (let i = 0; i < fromParts.length - baseCount; i++) {
     relParts.push('..')
   }
 

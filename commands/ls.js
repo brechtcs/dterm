@@ -5,9 +5,9 @@ import resolvePath from '../modules/dterm-resolve-path.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 export default async function (opts = {}, location = '') {
-  var workingDir = parsePath(window.location.pathname)
-  var lsDir = parsePath(resolvePath(getHome(), workingDir, location))
-  var listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
+  let workingDir = parsePath(window.location.pathname)
+  let lsDir = parsePath(resolvePath(getHome(), workingDir, location))
+  let listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
 
   return listing.sort(dirsFirst).map(entry => {
     entry.toHTML = () => listItem(entry, lsDir, opts.all || opts.a)
@@ -22,11 +22,11 @@ function dirsFirst (a, b) {
 }
 
 function listItem (entry, dir, all) {
-  var url = dir.archive.url + '/' + joinPath(dir.path, entry.name)
-  var dotfile = entry.name.startsWith('.')
+  let url = dir.archive.url + '/' + joinPath(dir.path, entry.name)
+  let dotfile = entry.name.startsWith('.')
 
-  var el = html`<div class=${dotfile ? 'text-muted' : 'text-default'}></div>`
-  var link = html`<a href=${url} target="_blank">${shortenHash(entry.name)}</a>`
+  let el = html`<div class=${dotfile ? 'text-muted' : 'text-default'}></div>`
+  let link = html`<a href=${url} target="_blank">${shortenHash(entry.name)}</a>`
   el.appendChild(link)
 
   if (dotfile && !all) el.setAttribute('hidden', '')

@@ -7,9 +7,9 @@ export function version () {
 }
 
 export function config (opts) {
-  var env = loadEnv()
-  var set = (opt, fn) => {
-    var val = opts[opt]
+  let env = loadEnv()
+  let set = (opt, fn) => {
+    let val = opts[opt]
     if (typeof val !== 'undefined') {
       env.config[opt] = fn ? fn(val) : val
     }
@@ -21,10 +21,10 @@ export function config (opts) {
 }
 
 export function install (opts, path, name) {
-  var env = loadEnv()
+  let env = loadEnv()
 
   if (!path.startsWith('dat://')) {
-    var cwd = parsePath(window.location.pathname)
+    let cwd = parsePath(window.location.pathname)
     path = 'dat://' + joinPath(cwd.key, cwd.path, path)
   }
   if (!name) {
@@ -35,7 +35,7 @@ export function install (opts, path, name) {
 }
 
 export function uninstall (opts, name) {
-  var env = loadEnv()
+  let env = loadEnv()
   delete env.commands[name]
   return saveEnv(env)
 }

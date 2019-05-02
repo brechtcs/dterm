@@ -1,7 +1,7 @@
 import depth from '../modules/glob-depth.js'
 
 export function globDepth (t) {
-  var cases = [
+  let cases = [
     "depth('arf/barf/**/*.md') === Infinity",
     "depth('arf/barf/af.{md.txt}') === 3",
     "depth('arf/barf/*.txt') === 3",
