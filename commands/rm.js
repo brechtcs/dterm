@@ -1,5 +1,5 @@
 import glob from '../modules/dat-glob.js'
-import isGlob from '../shared/is-glob-v4.0.1.js'
+import isGlob from '../vendor/is-glob-v4.0.1.js'
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
 

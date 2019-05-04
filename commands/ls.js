@@ -1,4 +1,4 @@
-import html from '../shared/nanohtml-v1.2.4.js'
+import html from '../vendor/nanohtml-v1.2.4.js'
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
 import resolvePath from '../modules/dterm-resolve-path.js'

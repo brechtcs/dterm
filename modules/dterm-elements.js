@@ -1,5 +1,5 @@
 import {getHome} from './dterm-home.js'
-import html from '../shared/nanohtml-v1.2.4.js'
+import html from '../vendor/nanohtml-v1.2.4.js'
 import shortenHash from './shorten-hash.js'
 
 export function terminal (state, emit) {

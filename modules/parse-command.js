@@ -1,4 +1,4 @@
-import minimist from '../shared/minimist-v1.2.0.js'
+import minimist from '../vendor/minimist-v1.2.0.js'
 
 export default function (str) {
   let parts = splitParts(str)

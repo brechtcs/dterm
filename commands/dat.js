@@ -1,5 +1,5 @@
 import cd from './cd.js'
-import html from '../shared/nanohtml-v1.2.4.js'
+import html from '../vendor/nanohtml-v1.2.4.js'
 import parsePath from '../modules/dterm-parse-path.js'
 import shortenHash from '../modules/shorten-hash.js'
 

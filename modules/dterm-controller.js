@@ -1,7 +1,7 @@
 import assert from './assert.js'
-import ready from '../shared/document-ready-v2.0.2.js'
-import nanobus from '../shared/nanobus-v4.4.0.js'
-import nanomorph from '../shared/nanomorph-v5.1.3.js'
+import ready from '../vendor/document-ready-v2.0.2.js'
+import nanobus from '../vendor/nanobus-v4.4.0.js'
+import nanomorph from '../vendor/nanomorph-v5.1.3.js'
 
 export default function control () {
   return new ElementController(...arguments)

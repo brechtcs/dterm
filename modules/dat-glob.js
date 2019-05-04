@@ -1,6 +1,6 @@
 import assert from './assert.js'
 import depth from './glob-depth.js'
-import mm from '../shared/micromatch-v3.1.10.js'
+import mm from '../vendor/micromatch-v3.1.10.js'
 import parent from './glob-parent.js'
 import walk from './dat-walk.js'
 
