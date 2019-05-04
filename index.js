@@ -1,5 +1,6 @@
+import {DTERM_HOME} from './modules/dterm-constants.js'
 import {terminal, error, welcome} from './modules/dterm-elements.js'
-import {loadHome, getEnv} from './modules/dterm-home.js'
+import {selectHome, getEnv} from './modules/dterm-home.js'
 import control from './modules/dterm-controller.js'
 import glob from './modules/dat-glob.js'
 import getStream from './modules/dterm-stream.js'
@@ -58,7 +59,10 @@ async function env (state, emitter, term) {
   }
 
   try {
-    state.home = Object.freeze(await loadHome())
+    let url = localStorage.getItem(DTERM_HOME)
+    let home = await selectHome(url)
+
+    state.home = Object.freeze(home)
     state.env = Object.freeze(getEnv())
     state.cwd = parsePath(window.location.pathname)
     state.prompt = ''

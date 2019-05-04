@@ -1,13 +1,26 @@
+import {DTERM_HOME, DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
+import {selectHome, getHome, getEnv, setEnv, buildEnv} from '../modules/dterm-home.js'
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
-import {DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
 
-export function version () {
-  return `current version: v${DTERM_VERSION}`
+export default async function (opts = {}) {
+  if (opts.change) {
+    await selectHome()
+  } else if (opts.reload) {
+    await selectHome(getHome().archive.url)
+  } else if (opts.home === true) {
+    localStorage.setItem(DTERM_HOME, getHome().archive.url)
+  } else if (opts.home === false) {
+    localStorage.removeItem(DTERM_HOME)
+  } else if (opts.version || opts.v) {
+    return DTERM_VERSION
+  } else {
+    return getHome().archive.url
+  }
 }
 
-export function config (opts) {
-  let env = loadEnv()
+export function config (opts = {}) {
+  let env = getEnv()
   let set = (opt, fn) => {
     let val = opts[opt]
     if (typeof val !== 'undefined') {
@@ -21,7 +34,7 @@ export function config (opts) {
 }
 
 export function install (opts, path, name) {
-  let env = loadEnv()
+  let env = getEnv()
 
   if (!path.startsWith('dat://')) {
     let cwd = parsePath(window.location.pathname)
@@ -35,20 +48,25 @@ export function install (opts, path, name) {
 }
 
 export function uninstall (opts, name) {
-  let env = loadEnv()
+  let env = getEnv()
   delete env.commands[name]
   return saveEnv(env)
 }
 
-export function reset () {
-  localStorage.removeItem(ENV_STORAGE_KEY)
+export function recover (opts = {}) {
+  let stored = JSON.parse(localStorage.getItem(ENV_STORAGE_KEY))
+  let env = buildEnv(stored)
+
+  if (opts.save || opts.s) {
+    return saveEnv(env)
+  }
+  return JSON.stringify(env, null, 4)
 }
 
-function loadEnv() {
-  return JSON.parse(localStorage.getItem(ENV_STORAGE_KEY))
-}
-
-function saveEnv(env) {
-  localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(env))
-  return `New settings saved. Refresh dterm to load them.`
+/**
+ * Private helpers
+ */
+async function saveEnv (env) {
+  await setEnv(env)
+  await selectHome(getHome().archive.url)
 }

@@ -1,4 +1,4 @@
-export const DTERM_VERSION = '0.1.0'
+export const DTERM_VERSION = '0.2.0'
 export const DTERM_HOME = 'dterm-home'
 export const ENV_STORAGE_KEY = 'dterm-env'
 

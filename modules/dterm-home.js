@@ -1,58 +1,73 @@
-import {DTERM_HOME, BUILTIN_COMMANDS} from './dterm-constants.js'
+import {BUILTIN_COMMANDS} from './dterm-constants.js'
 import joinPath from './join-path.js'
 
 let home = null
 let env = null
 
-export async function loadHome () {
-  let url = localStorage.getItem(DTERM_HOME)
+export function getHome () {
+  return home
+}
 
-  if (url) {
-    return setHome(new DatArchive(url))
+export async function selectHome (url) {
+  let archive = url ? new DatArchive(url) : await DatArchive.selectArchive({filters: {isOwner: true}})
+  let {key, title} = await archive.getInfo()
+  home = {archive, key, path: ''}
+  document.title = title + ' - dterm'
+
+  if (await exists(archive, 'term.json')) {
+    await loadEnv()
+  } else {
+    await setEnv(buildEnv())
   }
-  let env = {commands: {}, config: {}}
-  let command, host = new URL(import.meta.url).host
-
-  for (command of BUILTIN_COMMANDS) {
-    env.commands[command.name] = 'dat://' + joinPath(host, 'commands', command.name + '.js')
-  }
-  env.commands.help = 'dat://' + joinPath(host, 'commands/help.js')
-
-  let archive = await DatArchive.create({
-    title: 'dterm home',
-    description: 'Home archive for dterm',
-    type: 'dterm-home'
-  })
-
-  localStorage.setItem(DTERM_HOME, archive.url)
-  await archive.writeFile('term.json', JSON.stringify(env, null, 2))
-  await archive.mkdir('commands')
-  return setHome(archive)
+  return home
 }
 
 export function getEnv () {
   if (!home) {
     throw new Error('Environment not loaded')
   }
-  return env || setEnv(home.archive)
+  return env || loadEnv()
 }
 
-export function getHome () {
-  return home
-}
-
-async function setEnv (archive) {
-  let term = await archive.readFile('term.json')
-  env = JSON.parse(term)
-  return env
-}
-
-async function setHome (archive) {
-  await setEnv(archive)
-  home = {
-    archive,
-    key: archive.url.replace(/^dat:\/\//, ''),
-    path: ''
+export async function setEnv (next) {
+  if (!home) {
+    throw new Error('Environment not loaded')
   }
-  return home
+  await home.archive.writeFile('term.json', JSON.stringify(next, null, 4))
+  env = next
+}
+
+export function buildEnv (init) {
+  init = init || {commands: {}, config: {}}
+  let command, host = new URL(import.meta.url).host
+
+  for (command of BUILTIN_COMMANDS) {
+    if (!init.commands[command.name]) {
+      init.commands[command.name] = 'dat://' + joinPath(host, 'commands', command.name + '.js')
+    }
+  }
+  if (!init.commands.help) {
+    init.commands.help = 'dat://' + joinPath(host, 'commands/help.js')
+  }
+  return init
+}
+
+/**
+ * Private helpers
+ */
+async function loadEnv () {
+  let term = await home.archive.readFile('term.json')
+  return env = JSON.parse(term)
+}
+
+async function exists (archive, file) {
+  try {
+    await archive.stat(file)
+    return true
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      return false
+    }
+    throw err
+  }
 }
