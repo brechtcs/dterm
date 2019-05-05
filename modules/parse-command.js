@@ -4,7 +4,7 @@ export default function (str) {
   let parts = splitParts(str)
   let cmd = parts.shift()
 
-  let opts = minimist(parts)
+  let opts = minimist(parts, {boolean: true})
   let args = opts._
   delete opts._
 

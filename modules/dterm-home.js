@@ -39,6 +39,11 @@ export function buildEnv (env) {
   if (!env.commands.help) {
     env.commands.help = 'dat://' + joinPath(host, 'commands/help.js')
   }
+
+  if (typeof env.config.lsAfterCd !== 'undefined') {
+    env.config['ls-after-cd'] = env.config.lsAfterCd
+    delete env.config.lsAfterCd
+  }
   return env
 }
 

@@ -21,16 +21,14 @@ export default async function (opts = {}) {
 }
 
 export async function config (opts = {}) {
-  let env = await readEnv()
-  let set = (opt, fn) => {
+  let opt, env = await readEnv()
+
+  for (opt in opts) {
     let val = opts[opt]
     if (typeof val !== 'undefined') {
-      env.config[opt] = fn ? fn(val) : val
+      env.config[opt] = val
     }
   }
-
-  set('lsAfterCd', Boolean)
-
   return saveEnv(env)
 }
 

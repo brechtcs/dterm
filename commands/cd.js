@@ -14,7 +14,7 @@ export default async function (opts = {}, ...args) {
   location = changeVersion(location, version)
   await setWorkingDir(location)
 
-  if (publicState.env.config.lsAfterCd) {
+  if (publicState.env.config['ls-after-cd']) {
     return ls()
   }
 }
