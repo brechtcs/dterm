@@ -1,6 +1,6 @@
 import {DTERM_HOME} from './modules/dterm-constants.js'
 import {terminal, error, welcome} from './modules/dterm-elements.js'
-import {selectHome, getEnv} from './modules/dterm-home.js'
+import {selectHome} from './modules/dterm-home.js'
 import control from './modules/dterm-controller.js'
 import glob from './modules/dat-glob.js'
 import getStream from './modules/dterm-stream.js'
@@ -9,13 +9,14 @@ import joinPath from './modules/join-path.js'
 import loadCommand from './modules/dterm-load-command.js'
 import parseCommand from './modules/parse-command.js'
 import parsePath from './modules/dterm-parse-path.js'
+import publicState from './modules/dterm-public-state.js'
 import relativePath from './modules/relative-path.js'
 
 let term = control('main')
 term.view(terminal)
+term.use(dterm)
 term.use(render)
 term.use(focus)
-term.use(env)
 term.use(commands)
 term.use(keyboard)
 term.use(history)
@@ -26,6 +27,21 @@ term.mount()
 /**
  * Handlers
  */
+async function dterm (state, emitter) {
+  state.public = publicState
+
+  try {
+    await selectHome(localStorage.getItem(DTERM_HOME))
+    state.public.cwd = parsePath(window.location.pathname)
+    state.public.prompt = ''
+
+    emitter.emit('render')
+    emitter.emit('focus')
+  } catch (err) {
+    emitter.emit('cmd:out', err, true)
+  }
+}
+
 function render (state, emitter, term) {
   emitter.on('render', function () {
     term.render()
@@ -44,36 +60,6 @@ function focus (state, emitter) {
   }
 }
 
-async function env (state, emitter, term) {
-  state.prompt = false
-  state.cwd = null
-  state.home = null
-  state.env = null
-
-  window.getEnv = function () {
-    return state.env
-  }
-
-  window.getHome = function () {
-    return state.home
-  }
-
-  try {
-    let url = localStorage.getItem(DTERM_HOME)
-    let home = await selectHome(url)
-
-    state.home = Object.freeze(home)
-    state.env = Object.freeze(getEnv())
-    state.cwd = parsePath(window.location.pathname)
-    state.prompt = ''
-
-    emitter.emit('render')
-    emitter.emit('focus')
-  } catch (err) {
-    emitter.emit('cmd:out', err, true)
-  }
-}
-
 function commands (state, emitter) {
   state.entries = [{
     cwd: null,
@@ -82,13 +68,13 @@ function commands (state, emitter) {
   }]
 
   emitter.on('cmd:change', function (cmd) {
-    state.prompt = cmd
+    state.public.prompt = cmd
   })
 
   emitter.on('cmd:enter', function (cmd) {
-    state.prompt = false
+    state.public.prompt = false
     state.entries.push({
-      cwd: state.cwd,
+      cwd: state.public.cwd,
       in: cmd,
       out: []
     })
@@ -140,8 +126,8 @@ function commands (state, emitter) {
     }
 
     if (!ongoing) {
-      state.prompt = ''
-      state.cwd = parsePath(window.location.pathname)
+      state.public.prompt = ''
+      state.public.cwd = parsePath(window.location.pathname)
     }
     state.entries[state.entries.length - 1].out.push(output)
     emitter.emit('render')
@@ -200,19 +186,19 @@ function history (state, emitter) {
   emitter.on('hist:up', function () {
     if (state.history.cursor === -1) return ''
     state.history.cursor = Math.max(0, state.history.cursor - 1)
-    state.prompt = state.history[state.history.cursor]
+    state.public.prompt = state.history[state.history.cursor]
     emitter.emit('render')
   })
 
   emitter.on('hist:down', function () {
     state.history.cursor = Math.min(state.history.length, state.history.cursor + 1)
-    state.prompt = state.history[state.history.cursor] || ''
+    state.public.prompt = state.history[state.history.cursor] || ''
     emitter.emit('render')
   })
 
   emitter.on('hist:reset', function () {
     state.history.cursor = state.history.length
-    state.prompt = ''
+    state.public.prompt = ''
     emitter.emit('render')
   })
 }
@@ -221,11 +207,11 @@ function menu (state, emitter) {
   state.menu = {cursor: -1}
 
   emitter.on('menu:nav', async function (back) {
-    if (!state.cwd || state.prompt.indexOf(' ') < 0) {
+    if (!state.public.cwd || state.public.prompt.indexOf(' ') < 0) {
       return
     }
-    let {archive, path} = state.cwd
-    let parts = state.prompt.split(' ')
+    let {archive, path} = state.public.cwd
+    let parts = state.public.prompt.split(' ')
     let last = parts.pop()
     let pattern = isGlob(last) ? last : last + '*'
 
@@ -250,7 +236,7 @@ function menu (state, emitter) {
     if (item) {
       item = last.startsWith('~') ? '~/' + item : item
       state.menu.cursor = cursor
-      state.prompt = parts.join(' ') + ' ' + item
+      state.public.prompt = parts.join(' ') + ' ' + item
       emitter.emit('render')
     }
   })

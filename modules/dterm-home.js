@@ -1,65 +1,50 @@
 import {BUILTIN_COMMANDS} from './dterm-constants.js'
+import publicState from './dterm-public-state.js'
 import joinPath from './join-path.js'
 
-let home = null
-let env = null
-
-export function getHome () {
-  return home
-}
-
 export async function selectHome (url) {
-  let archive = url ? new DatArchive(url) : await DatArchive.selectArchive({filters: {isOwner: true}})
+  let archive = url && url !== true
+    ? new DatArchive(url)
+    : await DatArchive.selectArchive({filters: {isOwner: true}})
   let {key, title} = await archive.getInfo()
-  home = {archive, key, path: ''}
+
+  publicState.home = {archive, key, path: ''}
   document.title = title + ' - dterm'
 
   if (await exists(archive, 'term.json')) {
-    await loadEnv()
+    let term = await archive.readFile('term.json')
+    publicState.env = JSON.parse(term)
   } else {
-    await setEnv(buildEnv())
+    await saveHome(buildEnv())
   }
-  return home
 }
 
-export function getEnv () {
-  if (!home) {
+export async function saveHome (env) {
+  if (!publicState.home) {
     throw new Error('Environment not loaded')
   }
-  return env || loadEnv()
+  await publicState.home.archive.writeFile('term.json', JSON.stringify(env, null, 4))
+  publicState.env = env
 }
 
-export async function setEnv (next) {
-  if (!home) {
-    throw new Error('Environment not loaded')
-  }
-  await home.archive.writeFile('term.json', JSON.stringify(next, null, 4))
-  env = next
-}
-
-export function buildEnv (init) {
-  init = init || {commands: {}, config: {}}
+export function buildEnv (env) {
+  env = env || {commands: {}, config: {}}
   let command, host = new URL(import.meta.url).host
 
   for (command of BUILTIN_COMMANDS) {
-    if (!init.commands[command.name]) {
-      init.commands[command.name] = 'dat://' + joinPath(host, 'commands', command.name + '.js')
+    if (!env.commands[command.name]) {
+      env.commands[command.name] = 'dat://' + joinPath(host, 'commands', command.name + '.js')
     }
   }
-  if (!init.commands.help) {
-    init.commands.help = 'dat://' + joinPath(host, 'commands/help.js')
+  if (!env.commands.help) {
+    env.commands.help = 'dat://' + joinPath(host, 'commands/help.js')
   }
-  return init
+  return env
 }
 
 /**
  * Private helpers
  */
-async function loadEnv () {
-  let term = await home.archive.readFile('term.json')
-  return env = JSON.parse(term)
-}
-
 async function exists (archive, file) {
   try {
     await archive.stat(file)

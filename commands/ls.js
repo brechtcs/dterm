@@ -1,12 +1,13 @@
 import html from '../vendor/nanohtml-v1.2.4.js'
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
+import publicState from '../modules/dterm-public-state.js'
 import resolvePath from '../modules/dterm-resolve-path.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 export default async function (opts = {}, location = '') {
   let workingDir = parsePath(window.location.pathname)
-  let lsDir = parsePath(resolvePath(getHome(), workingDir, location))
+  let lsDir = parsePath(resolvePath(publicState.home, workingDir, location))
   let listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
 
   return listing.sort(dirsFirst).map(entry => {

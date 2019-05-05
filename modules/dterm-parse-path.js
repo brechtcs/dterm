@@ -1,5 +1,3 @@
-import {getHome} from './dterm-home.js'
-
 let archives = new Map()
 
 export default function (pathname) {
@@ -10,7 +8,7 @@ export default function (pathname) {
     return acc
   }, [])
 
-  if (!parts.length) return getHome()
+  if (!parts.length) return null
   let key = parts.shift()
   let path = parts.join('/')
   let archive = getArchive(key)

@@ -1,5 +1,5 @@
-import {getHome} from './dterm-home.js'
 import html from '../vendor/nanohtml-v1.2.4.js'
+import publicState from './dterm-public-state.js'
 import shortenHash from './shorten-hash.js'
 
 export function terminal (state, emit) {
@@ -7,7 +7,7 @@ export function terminal (state, emit) {
     <div class="output">
       ${state.entries.map(output)}
     </div>
-    ${prompt(state.cwd, state.prompt, emit)}
+    ${prompt(state.public.cwd, state.public.prompt, emit)}
   </main>`
 }
 
@@ -28,7 +28,7 @@ export function error (err) {
 
 export function prompt (cwd, value, emit) {
   let interactive = !!emit
-  let prompt = (cwd && cwd.key != getHome().key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
+  let prompt = (cwd && cwd.key != publicState.home.key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
   let input = html`<input value=${value || ''} disabled>`
   let el = html`<div class="prompt">${prompt} ${input}</div>`
 

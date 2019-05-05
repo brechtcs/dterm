@@ -1,5 +1,6 @@
 import joinPath from '../modules/join-path.js'
 import parsePath from '../modules/dterm-parse-path.js'
+import publicState from '../modules/dterm-public-state.js'
 import resolvePath from '../modules/dterm-resolve-path.js'
 
 import ls from './ls.js'
@@ -9,11 +10,11 @@ export default async function (opts = {}, ...args) {
   let location = getLocation(args)
   let version = getVersion(args)
 
-  location = resolvePath(getHome(), cwd, location)
+  location = resolvePath(publicState.home, cwd, location)
   location = changeVersion(location, version)
   await setWorkingDir(location)
 
-  if (getEnv().config.lsAfterCd) {
+  if (publicState.env.config.lsAfterCd) {
     return ls()
   }
 }
@@ -46,5 +47,5 @@ async function setWorkingDir (location) {
       throw new Error('Not a directory')
     }
   }
-  window.history.pushState(null, {}, location)
+  publicState.cwd = cwd
 }

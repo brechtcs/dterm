@@ -1,26 +1,27 @@
 import {DTERM_HOME, DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
-import {selectHome, getHome, getEnv, setEnv, buildEnv} from '../modules/dterm-home.js'
+import {selectHome, saveHome, buildEnv} from '../modules/dterm-home.js'
 import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import publicState from '../modules/dterm-public-state.js'
 
 export default async function (opts = {}) {
-  if (opts.change) {
-    await selectHome()
-  } else if (opts.reload) {
-    await selectHome(getHome().archive.url)
-  } else if (opts.home === true) {
-    localStorage.setItem(DTERM_HOME, getHome().archive.url)
-  } else if (opts.home === false) {
-    localStorage.removeItem(DTERM_HOME)
-  } else if (opts.version || opts.v) {
+  if (opts.version || opts.v) {
     return DTERM_VERSION
-  } else {
-    return getHome().archive.url
   }
+  if (opts.home) {
+    await selectHome(opts.home)
+  } else if (opts.reload) {
+    await selectHome(publicState.home.archive.url)
+  }
+  if (opts.pin === true || opts.p === true) {
+    localStorage.setItem(DTERM_HOME, publicState.home.archive.url)
+  } else if (opts.pin === false) {
+    return localStorage.removeItem(DTERM_HOME)
+  }
+  return publicState.home.archive.url
 }
 
-export function config (opts = {}) {
-  let env = getEnv()
+export async function config (opts = {}) {
+  let env = await readEnv()
   let set = (opt, fn) => {
     let val = opts[opt]
     if (typeof val !== 'undefined') {
@@ -33,12 +34,11 @@ export function config (opts = {}) {
   return saveEnv(env)
 }
 
-export function install (opts, path, name) {
-  let env = getEnv()
+export async function install (opts, path, name) {
+  let env = await readEnv()
 
   if (!path.startsWith('dat://')) {
-    let cwd = parsePath(window.location.pathname)
-    path = 'dat://' + joinPath(cwd.key, cwd.path, path)
+    path = 'dat://' + joinPath(publicState.cwd.key, publicState.cwd.path, path)
   }
   if (!name) {
     name = path.split('/').pop().replace(/\.js/, '')
@@ -47,8 +47,8 @@ export function install (opts, path, name) {
   return saveEnv(env)
 }
 
-export function uninstall (opts, name) {
-  let env = getEnv()
+export async function uninstall (opts, name) {
+  let env = await readEnv()
   delete env.commands[name]
   return saveEnv(env)
 }
@@ -66,7 +66,12 @@ export function recover (opts = {}) {
 /**
  * Private helpers
  */
+async function readEnv () {
+  let term = await publicState.home.archive.readFile('term.json')
+  return JSON.parse(term)
+}
+
 async function saveEnv (env) {
-  await setEnv(env)
-  await selectHome(getHome().archive.url)
+  await saveHome(env)
+  await selectHome(publicState.home.archive.url)
 }
