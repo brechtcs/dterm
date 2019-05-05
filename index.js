@@ -216,8 +216,8 @@ function menu (state, emitter) {
     let pattern = isGlob(last) ? last : last + '*'
 
     if (last.startsWith('~')) {
-      archive = state.home.archive
-      path = state.home.path
+      archive = state.public.home.archive
+      path = state.public.home.path
       pattern = pattern.slice(1).replace(/^\//, '')
     }
 
