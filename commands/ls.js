@@ -6,7 +6,7 @@ import resolvePath from '../modules/dterm-resolve-path.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 export default async function (opts = {}, location = '') {
-  let workingDir = parsePath(window.location.pathname)
+  let workingDir = publicState.cwd
   let lsDir = parsePath(resolvePath(publicState.home, workingDir, location))
   let listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
 

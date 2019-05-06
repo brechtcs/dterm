@@ -6,7 +6,7 @@ import resolvePath from '../modules/dterm-resolve-path.js'
 import ls from './ls.js'
 
 export default async function (opts = {}, ...args) {
-  let cwd = parsePath(window.location.pathname)
+  let cwd = publicState.cwd
   let location = getLocation(args)
   let version = getVersion(args)
 

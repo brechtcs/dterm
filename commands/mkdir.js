@@ -1,13 +1,22 @@
 import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import publicState from '../modules/dterm-public-state.js'
 
 export default async function* (opts, ...dirs) {
-  let dir, cwd = parsePath(window.location.pathname)
+  for (let dir of dirs) {
+    let cwd = dir.startsWith('~')
+      ? publicState.home
+      : publicState.cwd
 
-  for (dir of dirs) {
-    dir = dir.startsWith('/') ? dir : joinPath(cwd.path, dir)
+    dir = resolve(dir, cwd)
     yield make(cwd.archive, dir)
   }
+}
+
+function resolve (path, cwd) {
+  path = path.replace(/^~/, '')
+
+  if (path.startsWith('/')) return path
+  return joinPath(cwd.path, path)
 }
 
 async function make (dat, dir) {
