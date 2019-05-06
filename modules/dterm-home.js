@@ -2,10 +2,13 @@ import {BUILTIN_COMMANDS} from './dterm-constants.js'
 import publicState from './dterm-public-state.js'
 import joinPath from './join-path.js'
 
+const selectOpts = {
+  title: 'Select home archive',
+  filters: {isOwner: true}
+}
+
 export async function selectHome (url) {
-  let archive = url && url !== true
-    ? new DatArchive(url)
-    : await DatArchive.selectArchive({filters: {isOwner: true}})
+  let archive = url ? new DatArchive(url) : await DatArchive.selectArchive(selectOpts)
   let {key, title} = await archive.getInfo()
 
   publicState.home = {archive, key, path: ''}

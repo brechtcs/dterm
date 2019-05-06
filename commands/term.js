@@ -8,7 +8,7 @@ export default async function (opts = {}) {
     return DTERM_VERSION
   }
   if (opts.home) {
-    await selectHome(opts.home)
+    await selectHome(opts.home === true ? null : opts.home)
   } else if (opts.reload) {
     await selectHome(publicState.home.archive.url)
   }
