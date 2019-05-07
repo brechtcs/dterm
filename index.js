@@ -43,9 +43,13 @@ async function dterm (state, emitter) {
 }
 
 function render (state, emitter, term) {
-  emitter.on('render', function () {
+  emitter.on('render', function (scroll) {
     term.render()
     emitter.emit('focus')
+
+    if (scroll) {
+      window.scrollTo(0, document.body.scrollHeight)
+    }
   })
 }
 
@@ -92,29 +96,29 @@ function commands (state, emitter) {
       let stream = getStream(out)
       let action = stream ? 'cmd:stream' : 'cmd:out'
       emitter.emit(action, stream || out)
+      if (stream) return
+      emitter.emit('cmd:done')
     } catch (err) {
       console.error(err)
       emitter.emit('cmd:out', err)
+      emitter.emit('cmd:done')
     }
   })
 
   emitter.on('cmd:stream', async function (it) {
     try {
-      let next, out = await it.next()
-
-      while (true) {
-        next = await it.next()
-        emitter.emit('cmd:out', out.value, !next.done)
-        if (next.done) break
-        out = next
+      for await (let val of it) {
+        emitter.emit('cmd:out', val)
       }
     } catch (err) {
       console.error(err)
       emitter.emit('cmd:out', err)
+    } finally {
+      emitter.emit('cmd:done')
     }
   })
 
-  emitter.on('cmd:out', function (output, ongoing) {
+  emitter.on('cmd:out', function (output) {
     if (typeof output === 'undefined') {
       output = ''
     } else if (output instanceof Error) {
@@ -125,14 +129,14 @@ function commands (state, emitter) {
       output = JSON.stringify(output).replace(/^"|"$/g, '')
     }
 
-    if (!ongoing) {
-      state.public.prompt = ''
-      state.public.cwd = parsePath(window.location.pathname)
-    }
     state.entries[state.entries.length - 1].out.push(output)
-    emitter.emit('render')
+    emitter.emit('render', true)
+  })
 
-    window.scrollTo(0, document.body.scrollHeight)
+  emitter.on('cmd:done', function () {
+    state.public.prompt = state.public.prompt || ''
+    state.public.cwd = parsePath(window.location.pathname)
+    emitter.emit('render', true)
   })
 
   emitter.on('cmd:clear', function () {
