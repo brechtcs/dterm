@@ -1,4 +1,4 @@
-import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import {parseEntry, resolveEntry} from 'dat://dfurl.hashbase.io/modules/entry.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import assert from 'dat://dfurl.hashbase.io/modules/assert.js'
@@ -9,21 +9,20 @@ export default async function* (opts, from, to) {
   assert(to, 'Please specify a destination')
 
   let {cwd, home} = publicState
-  let src = resolveUrl(from, cwd, home)
-  let dst = resolveUrl(to, cwd, home)
+  let src = resolveEntry(from, cwd, home)
+  let dst = resolveEntry(to, cwd, home)
   let file, path
 
   if (!isGlob(src.path)) {
     yield copy(src, dst)
     return
+  } else if (await dst.isFile()) {
+    throw new Error(`target '${dst.location}' is not a directory`)
   }
   for await (path of glob(src.archive, src.path)) {
-    let file = parseUrl(src)
+    let target = parseEntry(dst)
+    let file = parseEntry(src)
     file.path = path
-
-    let base = path.split('/').pop()
-    let target = parseUrl(dst)
-    target.path = joinPath(target.path, base)
 
     yield copy(file, target)
   }
@@ -31,8 +30,14 @@ export default async function* (opts, from, to) {
 
 async function copy (src, dst) {
   try {
-    await src.archive.copy(src.path, dst.path)
-    //TODO: copy between dats
+    if (await dst.isDirectory()) {
+      dst.path = joinPath(dst.path, src.base)
+    }
+    if (src.key === dst.key) {
+      await src.archive.copy(src.path, dst.path)
+    } else {
+      await dst.write(await src.read())
+    }
   } catch (err) {
     return err
   }
