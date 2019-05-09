@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import assert from '../modules/assert.js'
+import assert from 'dat://dfurl.hashbase.io/modules/assert.js'
 
 export default function Nanobus (name) {
   if (!(this instanceof Nanobus)) return new Nanobus(name)

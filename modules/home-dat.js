@@ -1,6 +1,7 @@
-import {BUILTIN_COMMANDS} from './dterm-constants.js'
-import publicState from './dterm-public-state.js'
-import joinPath from './join-path.js'
+import {BUILTIN_COMMANDS} from './constants.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import publicState from './public-state.js'
 
 const selectOpts = {
   title: 'Select home archive',
@@ -9,10 +10,10 @@ const selectOpts = {
 
 export async function selectHome (url) {
   let archive = url ? new DatArchive(url) : await DatArchive.selectArchive(selectOpts)
-  let {key, title} = await archive.getInfo()
+  let info = await archive.getInfo()
 
-  publicState.home = {archive, key, path: ''}
-  document.title = title + ' - dterm'
+  publicState.home = resolveUrl(archive.url, window.location.origin)
+  publicState.title = info.title
 
   if (await exists(archive, 'term.json')) {
     let term = await archive.readFile('term.json')
@@ -32,15 +33,15 @@ export async function saveHome (env) {
 
 export function buildEnv (env) {
   env = env || {commands: {}, config: {}}
-  let command, host = new URL(import.meta.url).host
+  let command, origin = new URL(import.meta.url).origin
 
   for (command of BUILTIN_COMMANDS) {
     if (!env.commands[command.name]) {
-      env.commands[command.name] = 'dat://' + joinPath(host, 'commands', command.name + '.js')
+      env.commands[command.name] = joinPath(origin, 'commands', command.name + '.js')
     }
   }
   if (!env.commands.help) {
-    env.commands.help = 'dat://' + joinPath(host, 'commands/help.js')
+    env.commands.help = joinPath(origin, 'commands/help.js')
   }
 
   if (typeof env.config.lsAfterCd !== 'undefined') {

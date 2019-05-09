@@ -1,27 +1,19 @@
-import joinPath from '../modules/join-path.js'
-import publicState from '../modules/dterm-public-state.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import publicState from '../modules/public-state.js'
 
 export default async function* (opts, ...dirs) {
-  for (let dir of dirs) {
-    let cwd = dir.startsWith('~')
-      ? publicState.home
-      : publicState.cwd
+  let {cwd, home} = publicState
+  let dir = ''
 
-    dir = resolve(dir, cwd)
-    yield make(cwd.archive, dir)
+  for (dir of dirs) {
+    let target = resolveUrl(dir, cwd, home)
+    yield make(target)
   }
 }
 
-function resolve (path, cwd) {
-  path = path.replace(/^~/, '')
-
-  if (path.startsWith('/')) return path
-  return joinPath(cwd.path, path)
-}
-
-async function make (dat, dir) {
+async function make (target) {
   try {
-    await dat.mkdir(dir)
+    await target.archive.mkdir(target.path)
   } catch (err) {
     return err
   }

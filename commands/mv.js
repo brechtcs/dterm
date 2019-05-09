@@ -1,41 +1,38 @@
-import assert from '../modules/assert.js'
-import glob from '../modules/dat-glob.js'
-import isGlob from '../vendor/is-glob-v4.0.1.js'
-import joinPath from '../modules/join-path.js'
-import publicState from '../modules/dterm-public-state.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
+import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import assert from 'dat://dfurl.hashbase.io/modules/assert.js'
+import publicState from '../modules/public-state.js'
 
-export default async function* (opts, src, dst) {
-  assert(src, 'src is required')
-  assert(dst, 'dst is required')
+export default async function* (opts, from, to) {
+  assert(from, 'Please specify a source and destination')
+  assert(to, 'Please specify a destination')
 
+  let {cwd, home} = publicState
+  let src = resolveUrl(from, cwd, home)
+  let dst = resolveUrl(to, cwd, home)
+  let file, path
 
-  let cwd = src.startsWith('~')
-    ? publicState.home
-    : publicState.cwd
-
-  src = resolve(src, cwd)
-  dst = resolve(dst, cwd)
-
-  if (!isGlob(src)) {
-    yield rename(cwd.archive, src, dst)
+  if (!isGlob(src.path)) {
+    yield rename(src, dst)
     return
   }
-  for await (let file of glob(cwd.archive, src)) {
-    let base = file.split('/').pop()
-    yield rename(cwd.archive, file, joinPath(dst, base))
+  for await (path of glob(src.archive, src.path)) {
+    let file = parseUrl(src)
+    file.path = path
+
+    let base = path.split('/').pop()
+    let target = parseUrl(dst)
+    target.path = joinPath(target.path, base)
+
+    yield rename(file, target)
   }
 }
 
-function resolve (path, cwd) {
-  path = path.replace(/^~/, '')
-
-  if (path.startsWith('/')) return path
-  return joinPath(cwd.path, path)
-}
-
-async function rename (dat, src, dst) {
+async function rename (src, dst) {
   try {
-    await dat.rename(src, dst)
+    await src.archive.rename(src.path, dst.path)
+    //TODO: move between dats
   } catch (err) {
     return err
   }

@@ -1,6 +1,6 @@
 import cd from './cd.js'
 import html from '../vendor/nanohtml-v1.2.4.js'
-import publicState from '../modules/dterm-public-state.js'
+import publicState from '../modules/public-state.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 export async function create (opts) {

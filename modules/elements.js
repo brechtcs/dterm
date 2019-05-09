@@ -1,5 +1,5 @@
 import html from '../vendor/nanohtml-v1.2.4.js'
-import publicState from './dterm-public-state.js'
+import publicState from './public-state.js'
 import shortenHash from './shorten-hash.js'
 
 export function terminal (state, emit) {
@@ -28,7 +28,8 @@ export function error (err) {
 
 export function prompt (cwd, value, emit) {
   let interactive = !!emit
-  let prompt = (cwd && cwd.key != publicState.home.key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
+  let home = publicState.home
+  let prompt = (cwd && cwd.key !== home.key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
   let input = html`<input value=${value || ''} disabled>`
   let el = html`<div class="prompt">${prompt} ${input}</div>`
 

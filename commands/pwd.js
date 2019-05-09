@@ -1,4 +1,4 @@
-import publicState from '../modules/dterm-public-state.js'
+import publicState from '../modules/public-state.js'
 
 export default function () {
   let cwd = publicState.cwd

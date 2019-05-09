@@ -1,16 +1,14 @@
-import {DTERM_HOME} from './modules/dterm-constants.js'
-import {terminal, error, welcome} from './modules/dterm-elements.js'
-import {selectHome} from './modules/dterm-home.js'
-import control from './modules/dterm-controller.js'
-import glob from './modules/dat-glob.js'
-import getStream from './modules/dterm-stream.js'
-import isGlob from './vendor/is-glob-v4.0.1.js'
-import joinPath from './modules/join-path.js'
-import loadCommand from './modules/dterm-load-command.js'
+import {DTERM_HOME} from './modules/constants.js'
+import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
+import {terminal, error, welcome} from './modules/elements.js'
+import {selectHome} from './modules/home-dat.js'
+import control from './modules/controller.js'
+import getStream from './modules/get-stream.js'
+import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
-import parsePath from './modules/dterm-parse-path.js'
-import publicState from './modules/dterm-public-state.js'
-import relativePath from './modules/relative-path.js'
+import publicState from './modules/public-state.js'
 
 let term = control('main')
 term.view(terminal)
@@ -32,7 +30,7 @@ async function dterm (state, emitter) {
 
   try {
     await selectHome(localStorage.getItem(DTERM_HOME))
-    state.public.cwd = parsePath(window.location.pathname)
+    state.public.cwd = parseUrl(window.location)
     state.public.prompt = ''
 
     emitter.emit('render')
@@ -135,7 +133,7 @@ function commands (state, emitter) {
 
   emitter.on('cmd:done', function () {
     state.public.prompt = state.public.prompt || ''
-    state.public.cwd = parsePath(window.location.pathname)
+    state.public.cwd = parseUrl(window.location)
     emitter.emit('render', true)
   })
 

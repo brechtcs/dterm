@@ -1,7 +1,7 @@
-import {DTERM_HOME, DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/dterm-constants.js'
-import {selectHome, saveHome, buildEnv} from '../modules/dterm-home.js'
-import joinPath from '../modules/join-path.js'
-import publicState from '../modules/dterm-public-state.js'
+import {DTERM_HOME, DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/constants.js'
+import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import {selectHome, saveHome, buildEnv} from '../modules/home-dat.js'
+import publicState from '../modules/public-state.js'
 
 export default async function (opts = {}) {
   if (opts.version || opts.v) {
@@ -36,7 +36,7 @@ export async function install (opts, path, name) {
   let env = await readEnv()
 
   if (!path.startsWith('dat://')) {
-    path = 'dat://' + joinPath(publicState.cwd.key, publicState.cwd.path, path)
+    path = joinPath(publicState.cwd.key, publicState.cwd.path, path)
   }
   if (!name) {
     name = path.split('/').pop().replace(/\.js/, '')

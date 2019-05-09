@@ -1,21 +1,22 @@
-import joinPath from './join-path.js'
-import publicState from './dterm-public-state.js'
+import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import publicState from './public-state.js'
 
 export default async function (cmd, location) {
   return import(await findCommand(cmd, location))
 }
 
 export async function findCommand (cmd, location) {
-  let installed = publicState.env.commands[cmd]
+  let {env, cwd, home} = publicState
+  let installed = env.commands[cmd]
 
   if (installed) {
     return installed
   }
   try {
     try {
-      return await findInArchive(publicState.cwd, cmd)
+      return await findInArchive(cwd, cmd)
     } catch (err) {
-      return await findInArchive(publicState.home, cmd)
+      return await findInArchive(home, cmd)
     }
   } catch (err) {
     throw new Error(cmd + ': command not found')
