@@ -1,23 +1,27 @@
 import {DTERM_HOME, DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/constants.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import {selectHome, saveHome, buildEnv} from '../modules/home-dat.js'
+import html from '../vendor/nanohtml-v1.2.4.js'
 import publicState from '../modules/public-state.js'
+
+function success () {
+  const refresh = () =>  window.location.reload()
+  return html`<div>Configuration saved. <a href="#" onclick=${refresh}>Refresh terminal to apply</a></div>`
+}
 
 export default async function (opts = {}) {
   if (opts.version || opts.v) {
     return DTERM_VERSION
   }
   if (opts.home) {
-    await selectHome(opts.home === true ? null : opts.home)
-  } else if (opts.reload) {
-    await selectHome(publicState.home.archive.url)
+    let home = opts.home === true
+      ? publicState.cwd.archive.url
+      : opts.home
+    localStorage.setItem(DTERM_HOME, home)
+  } else if (opts.home == false) {
+    localStorage.setItem(DTERM_HOME, false)
   }
-  if (opts.pin === true || opts.p === true) {
-    localStorage.setItem(DTERM_HOME, publicState.home.archive.url)
-  } else if (opts.pin === false) {
-    return localStorage.removeItem(DTERM_HOME)
-  }
-  return publicState.home.archive.url
+  return success()
 }
 
 export async function config (opts = {}) {
@@ -71,5 +75,5 @@ async function readEnv () {
 
 async function saveEnv (env) {
   await saveHome(env)
-  await selectHome(publicState.home.archive.url)
+  return success()
 }

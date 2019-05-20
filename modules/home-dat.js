@@ -1,4 +1,4 @@
-import {BUILTIN_COMMANDS} from './constants.js'
+import {BUILTIN_COMMANDS, DTERM_HOME} from './constants.js'
 import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import publicState from './public-state.js'
@@ -9,18 +9,33 @@ const selectOpts = {
 }
 
 export async function selectHome (url) {
-  let archive = url ? new DatArchive(url) : await DatArchive.selectArchive(selectOpts)
-  let info = await archive.getInfo()
+  let archive, env
 
-  publicState.home = resolveUrl(archive.url, window.location.origin)
-  publicState.title = info.title
+  try {
+    archive = await DatArchive.load(url)
+    let info = await archive.getInfo()
+    if (!info.isOwner) {
+      throw new Error('Must be owner of home archive')
+    }
+  } catch (err) {
+    console.error(err)
+    archive = await DatArchive.selectArchive(selectOpts)
+  }
 
   if (await exists(archive, 'term.json')) {
     let term = await archive.readFile('term.json')
-    publicState.env = JSON.parse(term)
+    env = JSON.parse(term)
   } else {
-    await saveHome(buildEnv())
+    env = buildEnv()
+    await saveHome(env)
   }
+
+  if (url && url !== 'false') {
+    localStorage.setItem(DTERM_HOME, archive.url)
+  }
+
+  publicState.home = resolveUrl(archive.url, window.location.origin)
+  publicState.env = env
 }
 
 export async function saveHome (env) {
@@ -28,7 +43,6 @@ export async function saveHome (env) {
     throw new Error('Environment not loaded')
   }
   await publicState.home.archive.writeFile('term.json', JSON.stringify(env, null, 4))
-  publicState.env = env
 }
 
 export function buildEnv (env) {

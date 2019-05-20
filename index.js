@@ -33,6 +33,9 @@ async function dterm (state, emitter) {
     state.public.cwd = parseUrl(window.location)
     state.public.prompt = ''
 
+    let info = await state.public.cwd.archive.getInfo()
+    state.public.title = info.title
+
     emitter.emit('render')
     emitter.emit('focus')
   } catch (err) {

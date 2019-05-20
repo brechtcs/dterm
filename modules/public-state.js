@@ -1,3 +1,4 @@
+import {DTERM_HOME} from './constants.js'
 import {DistributedFilesURL} from 'dat://dfurl.hashbase.io/modules/url.js'
 import assert from 'dat://dfurl.hashbase.io/modules/assert.js'
 
@@ -25,8 +26,11 @@ const state = {
   },
 
   set home (home) {
+    if (store.home) {
+      throw new Error('Cannot overwrite home property')
+    }
     assert(home instanceof DistributedFilesURL, 'home should be DistributedFilesURL object')
-    store.home = home
+    store.home = Object.freeze(home)
   },
 
   get env () {
@@ -34,10 +38,15 @@ const state = {
   },
 
   set env (env) {
+    if (store.env) {
+      throw new Error('Cannot overwrite env property')
+    }
     assert(typeof env.commands === 'object', 'env.commands should be object')
     assert(typeof env.config === 'object', 'env.config should be object')
 
-    store.env = env
+    Object.freeze(env.commands)
+    Object.freeze(env.config)
+    store.env = Object.freeze(env)
   },
 
   get cwd () {
