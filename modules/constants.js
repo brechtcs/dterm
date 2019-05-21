@@ -9,6 +9,7 @@ export const BUILTIN_COMMANDS = [
   {name: 'cd', description: 'Change the current directory'},
   {name: 'pwd', description: 'Fetch the current directory'},
   {name: 'echo', description: 'Output the arguments'},
+  {name: 'open', description: 'Open file or folder in new tab'},
   {name: 'cat', description: 'Output the contents of one or more files'},
   {name: 'mkdir', description: 'Make a new directory'},
   {name: 'rmdir', description: 'Remove existing directories'},
