@@ -27,15 +27,15 @@ export async function selectHome (url) {
     env = JSON.parse(term)
   } else {
     env = buildEnv()
-    await saveHome(env)
-  }
-
-  if (url && url !== 'false') {
-    localStorage.setItem(DTERM_HOME, archive.url)
   }
 
   publicState.home = resolveUrl(archive.url, window.location.origin)
   publicState.env = env
+  await saveHome(env)
+
+  if (url && url !== 'false') {
+    localStorage.setItem(DTERM_HOME, archive.url)
+  }
 }
 
 export async function saveHome (env) {
