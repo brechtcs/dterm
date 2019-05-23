@@ -40,15 +40,14 @@ export async function saveHome (env) {
 
 export function buildEnv (env) {
   env = env || {commands: {}, config: {}}
-  let command, origin = new URL(import.meta.url).origin
 
-  for (command of BUILTIN_COMMANDS) {
+  for (let command of BUILTIN_COMMANDS) {
     if (!env.commands[command.name]) {
-      env.commands[command.name] = joinPath(origin, 'commands', command.name + '.js')
+      env.commands[command.name] = joinPath('/commands', command.name + '.js')
     }
   }
   if (!env.commands.help) {
-    env.commands.help = joinPath(origin, 'commands/help.js')
+    env.commands.help = '/commands/help.js'
   }
 
   if (typeof env.config.lsAfterCd !== 'undefined') {
