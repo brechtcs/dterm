@@ -1,18 +1,19 @@
-import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import publicState from '../modules/public-state.js'
 
 export default async function* (opts, ...dirs) {
-  var dir, cwd = parsePath(window.location.pathname)
+  let {cwd, home} = publicState
+  let dir = ''
 
   for (dir of dirs) {
-    dir = dir.startsWith('/') ? dir : joinPath(cwd.path, dir)
-    yield make(cwd.archive, dir)
+    let target = resolveUrl(dir, cwd, home)
+    yield make(target)
   }
 }
 
-async function make (dat, dir) {
+async function make (target) {
   try {
-    await dat.mkdir(dir)
+    await target.archive.mkdir(target.path)
   } catch (err) {
     return err
   }

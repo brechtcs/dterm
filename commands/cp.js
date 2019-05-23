@@ -1,30 +1,43 @@
-import assert from '../modules/assert.js'
-import glob from '../modules/dat-glob.js'
-import isGlob from '../shared/is-glob-v4.0.1.js'
-import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import {parseEntry, resolveEntry} from 'dat://dfurl.hashbase.io/modules/entry.js'
+import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
+import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import assert from 'dat://dfurl.hashbase.io/modules/assert.js'
+import publicState from '../modules/public-state.js'
 
-export default async function* (opts, src, dst) {
-  assert(src, 'src is required')
-  assert(dst, 'dst is required')
+export default async function* (opts, from, to) {
+  assert(from, 'Please specify a source and destination')
+  assert(to, 'Please specify a destination')
 
-  var cwd = parsePath(window.location.pathname)
-  src = src.startsWith('/') ? src : joinPath(cwd.path, src)
-  dst = dst.startsWith('/') ? dst : joinPath(cwd.path, dst)
+  let {cwd, home} = publicState
+  let src = resolveEntry(from, cwd, home)
+  let dst = resolveEntry(to, cwd, home)
+  let file, path
 
-  if (!isGlob(src)) {
-    yield copy(cwd.archive, src, dst)
+  if (!isGlob(src.path)) {
+    yield copy(src, dst)
     return
+  } else if (await dst.isFile()) {
+    throw new Error(`target '${dst.location}' is not a directory`)
   }
-  for await (var file of glob(cwd.archive, src)) {
-    var base = file.split('/').pop()
-    yield copy(cwd.archive, file, joinPath(dst, base))
+  for await (path of glob(src.archive, src.path)) {
+    let target = parseEntry(dst)
+    let file = parseEntry(src)
+    file.path = path
+
+    yield copy(file, target)
   }
 }
 
-async function copy (dat, src, dst) {
+async function copy (src, dst) {
   try {
-    await dat.copy(src, dst)
+    if (await dst.isDirectory()) {
+      dst.path = joinPath(dst.path, src.base)
+    }
+    if (src.key === dst.key) {
+      await src.archive.copy(src.path, dst.path)
+    } else {
+      await dst.write(await src.read())
+    }
   } catch (err) {
     return err
   }

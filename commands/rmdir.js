@@ -1,22 +1,22 @@
-import glob from '../modules/dat-glob.js'
-import isGlob from '../shared/is-glob-v4.0.1.js'
-import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
+import publicState from '../modules/public-state.js'
 
 export default async function* (opts, ...patterns) {
   opts = {recursive: opts.r || opts.recursive}
-  var cwd = parsePath(window.location.pathname)
-  var pattern, dir
+
+  let {cwd, home} = publicState
+  let pattern, dir
 
   for (pattern of patterns) {
-    pattern = pattern.startsWith('/') ? pattern : joinPath(cwd.path, pattern)
+    let target = resolveUrl(pattern, cwd, home)
 
-    if (!isGlob(pattern)) {
-      yield rm(cwd.archive, pattern, opts)
+    if (!isGlob(target.path)) {
+      yield rm(target.archive, target.path, opts)
       continue
     }
-    for await (dir of glob(cwd.archive, {pattern, dirs: true})) {
-      yield rm(cwd.archive, dir, opts)
+    for await (dir of glob(target.archive, {pattern: target.path, dirs: true})) {
+      yield rm(target.archive, dir, opts)
     }
   }
 }

@@ -1,5 +1,5 @@
-import {BUILTIN_COMMANDS} from '../modules/dterm-constants.js'
-import html from '../shared/nanohtml-v1.2.4.js'
+import {BUILTIN_COMMANDS} from '../modules/constants.js'
+import html from '../vendor/nanohtml-v1.2.4.js'
 
 export default function () {
   return BUILTIN_COMMANDS.map(function (cmd) {

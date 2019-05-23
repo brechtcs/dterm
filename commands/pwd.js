@@ -1,11 +1,6 @@
-import parsePath from '../modules/dterm-parse-path.js'
+import publicState from '../modules/public-state.js'
 
 export default function () {
-  var path = '~'
-  var cwd = parsePath(window.location.pathname)
-
-  if (cwd) {
-    path += `/${cwd.key}/${cwd.path}`
-  }
-  return path
+  let cwd = publicState.cwd
+  return `${cwd.archive.url}/${cwd.path}`
 }

@@ -37,6 +37,15 @@ main {
 /**
  * Output
  */
+.output h1,
+.output h2,
+.output h3,
+.output h4,
+.output h5,
+.output h6 {
+  font-size: inherit;
+}
+
 .output .entry {
   margin-bottom: 1rem;
 }
@@ -45,18 +54,24 @@ main {
   white-space: pre;
 }
 
+.output .info {
+  white-space: normal;
+  color: blue
+}
+.output .info::before {
+  content: '· ';
+}
+
 .output .error {
   white-space: normal;
   color: red;
 }
-
 .output .error .error-header::before {
   content: '▸ ';
 }
 .output .error.open .error-header::before {
   content: '▾ ';
 }
-
 .output .error .error-stack {
   display: none;
   padding: 1rem;

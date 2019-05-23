@@ -1,5 +1,2 @@
 .dat
-.webrun
-
-shared/assert-*.js
-shared/join-path-*.js
+term.json

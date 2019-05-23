@@ -1,61 +1,41 @@
-import getEnv from '../modules/dterm-env.js'
-import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import publicState from '../modules/public-state.js'
 
 import ls from './ls.js'
 
 export default async function (opts = {}, ...args) {
-  var location = getLocation(args)
-  var version = getVersion(args)
+  let {cwd, env} = publicState
+  let location = getLocation(args)
+  let version = getVersion(args)
 
-  if (!location && !version) {
-    location = '/'
-  } else if (location.startsWith('dat://')) {
-    location = location.replace(/^dat:\//, '')
-  } else if (location.startsWith('/')) {
-    location = location.replace(/^\//, '/' + parsePath(window.location.pathname).key)
-  } else if (location.startsWith('~')) {
-    location = location.startsWith('~/') ? location.replace(/^~\//, '/') : '/'
-  } else {
-    location = joinPath(window.location.pathname, location)
-  }
-  if (version) {
-    location = changeVersion(location, version)
-  }
+  let next = await getNextCwd(cwd, location)
+  let info = await next.archive.getInfo()
+  if (version) next.version = version.replace(/^\+/, '')
 
-  await setWorkingDir(location)
+  publicState.title = info.title
+  publicState.cwd = next
 
-  if (getEnv().config.lsAfterCd) {
+  if (env.config['ls-after-cd']) {
     return ls()
   }
 }
 
+async function getNextCwd (prev, location) {
+  let cwd = resolveUrl(location, prev, publicState.home)
+  let stat = await cwd.archive.stat(cwd.path)
+
+  if (!stat.isDirectory()) {
+    throw new Error('Not a directory')
+  }
+  return cwd
+}
+
 function getLocation (args) {
   if (args.length > 1) return args[1].toString()
-  return args[0] ? args[0].toString() : ''
+  return args[0] ? args[0].toString() : '~'
 }
 
 function getVersion (args) {
   if (args.length > 1) return args[0].toString()
-}
-
-function changeVersion (location, version) {
-  version = version.replace(/^\+/, '')
-  var parts = location.split('/')
-  var key = parts[1].split('+')[0]
-  parts[1] = version === 'latest' ? key : `${key}+${version}`
-  return parts.join('/')
-}
-
-async function setWorkingDir (location) {
-  var cwd = parsePath(location)
-
-  if (cwd) {
-    // make sure the destination exists
-    let st = await cwd.archive.stat(cwd.path)
-    if (!st.isDirectory()) {
-      throw new Error('Not a directory')
-    }
-  }
-  window.history.pushState(null, {}, location)
 }

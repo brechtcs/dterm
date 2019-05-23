@@ -1,19 +1,20 @@
-import joinPath from '../modules/join-path.js'
-import parsePath from '../modules/dterm-parse-path.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import publicState from '../modules/public-state.js'
 
 export default async function (opts, ...args) {
-  var appendFlag = opts.a || opts.append
-  var dst = opts.to
-  var res = args.join(' ')
-  var cwd = parsePath(window.location.pathname)
+  let {cwd, home} = publicState
+  let appendFlag = opts.a || opts.append
+  let dst = opts.to
+  let res = args.join(' ')
 
   if (dst) {
-    dst = opts.to.startsWith('/') ? dst : joinPath(cwd.path, dst)
+    let target = resolveUrl(dst, cwd, home)
+
     if (appendFlag) {
-      var content = await cwd.archive.readFile(dst, 'utf8')
+      let content = await target.archive.readFile(target.path, 'utf8')
       res = content + res
     }
-    await cwd.archive.writeFile(dst, res)
+    await target.archive.writeFile(target.path, res)
   } else {
     return res
   }
