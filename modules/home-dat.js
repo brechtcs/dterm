@@ -9,32 +9,25 @@ const selectOpts = {
 }
 
 export async function selectHome (url) {
-  let archive, env
-
-  try {
-    archive = await DatArchive.load(url)
-    let info = await archive.getInfo()
-    if (!info.isOwner) {
-      throw new Error('Must be owner of home archive')
-    }
-  } catch (err) {
-    console.error(err)
-    archive = await DatArchive.selectArchive(selectOpts)
-  }
-
-  if (await exists(archive, 'term.json')) {
-    let term = await archive.readFile('term.json')
-    env = JSON.parse(term)
-  } else {
-    env = buildEnv()
+  // load home dat
+  let archive = (url === 'false' || !url) ? await DatArchive.selectArchive(selectOpts): new DatArchive(url)
+  let info = await archive.getInfo()
+  if (!info.isOwner) {
+    throw new Error('Must be owner of home archive')
   }
 
   publicState.home = resolveUrl(archive.url, window.location.origin)
-  publicState.env = env
-  await saveHome(env)
+  if (url !== 'false') localStorage.setItem(DTERM_HOME, archive.url)
 
-  if (url && url !== 'false') {
-    localStorage.setItem(DTERM_HOME, archive.url)
+  // setup environment
+  if (await exists(archive, 'term.json')) {
+    let term = await archive.readFile('term.json')
+    let env = JSON.parse(term)
+    publicState.env = env
+  } else {
+    let env = buildEnv()
+    await saveHome(env)
+    publicState.env = env
   }
 }
 
