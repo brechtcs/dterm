@@ -1,5 +1,6 @@
 export const DTERM_VERSION = '0.2.0'
 export const DTERM_HOME = 'dterm-home'
+export const DTERM_HISTORY = 'dterm-history'
 export const ENV_STORAGE_KEY = 'dterm-env'
 
 export const BUILTIN_COMMANDS = [

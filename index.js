@@ -1,4 +1,4 @@
-import {DTERM_HOME} from './modules/constants.js'
+import {DTERM_HOME, DTERM_HISTORY} from './modules/constants.js'
 import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
@@ -180,11 +180,16 @@ function keyboard (state, emitter) {
 }
 
 function history (state, emitter) {
-  state.history = []
-  state.history.cursor = -1
+  state.history = readHistory() || []
+  state.history.cursor = state.history.length || -1
 
   emitter.on('cmd:enter', function (cmd) {
-    if (cmd) state.history.push(cmd)
+    let last = state.history[state.history.length - 1]
+
+    if (cmd && cmd !== last) {
+      state.history.push(cmd)
+      storeHistory()
+    }
     state.history.cursor = state.history.length
   })
 
@@ -206,6 +211,15 @@ function history (state, emitter) {
     state.public.prompt = ''
     emitter.emit('render')
   })
+
+  function readHistory () {
+    return JSON.parse(sessionStorage.getItem(DTERM_HISTORY))
+  }
+
+  function storeHistory () {
+    let hist = JSON.stringify(state.history.slice(-12))
+    return sessionStorage.setItem(DTERM_HISTORY, hist)
+  }
 }
 
 function menu (state, emitter) {
