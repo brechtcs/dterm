@@ -1,4 +1,4 @@
-import {parseEntry, resolveEntry} from 'dat://dfurl.hashbase.io/modules/entry.js'
+import {parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import assert from 'dat://dfurl.hashbase.io/modules/assert.js'
@@ -9,8 +9,8 @@ export default async function* (opts, from, to) {
   assert(to, 'Please specify a destination')
 
   let {cwd, home} = publicState
-  let src = resolveEntry(from, cwd, home)
-  let dst = resolveEntry(to, cwd, home)
+  let src = resolveUrl(from, cwd, home)
+  let dst = resolveUrl(to, cwd, home)
   let file, path
 
   if (!isGlob(src.path)) {
@@ -20,8 +20,8 @@ export default async function* (opts, from, to) {
     throw new Error(`target '${dst.location}' is not a directory`)
   }
   for await (path of glob(src.archive, src.path)) {
-    let target = parseEntry(dst)
-    let file = parseEntry(src)
+    let target = parseUrl(dst)
+    let file = parseUrl(src)
     file.path = path
 
     yield copy(file, target)

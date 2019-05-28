@@ -1,6 +1,6 @@
 import {DTERM_HOME, DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/constants.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
-import {resolveEntry} from 'dat://dfurl.hashbase.io/modules/entry.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {selectHome, saveHome, buildEnv} from '../modules/home-dat.js'
 import html from '../vendor/nanohtml-v1.2.4.js'
 import publicState from '../modules/public-state.js'
@@ -40,7 +40,7 @@ export async function config (opts = {}) {
 export async function install (opts, location, name) {
   let {cwd, home} = publicState
   let env = await readEnv()
-  let entry = resolveEntry(location, cwd, home)
+  let entry = resolveUrl(location, cwd, home)
   env.commands[name || entry.name] = entry.location
   return saveEnv(env)
 }
