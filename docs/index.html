@@ -1,95 +1,10 @@
 <!doctype html>
-<html>
-<head>
+<html><head>
     <title>dterm</title>
     <meta charset="utf-8">
 
 	<link rel="stylesheet" href="dat://dfurl.hashbase.io/vendor/water-light-v1.4.0.css">
 </head>
 <body>
-    <main contenteditable="false">
-    <h1>dterm</h1>
-    <p>Distributed Terminal.</p><h2 id="getting-started">Getting started</h2>
-    <p>When using dterm for the first time, you will be asked to select an archive to function as your terminal's home directory. This is where dterm will store its settings in a <code>term.json</code> file. For this reason, you can only choose a dat you own. Alternatively, you can create a new archive. For the purpose of this tutorial, let's go with that option. Note that you can choose a different home dat at any time using the <code>term --home</code> command.</p><p>Now that we've got our home dat, let's use it to create our first custom command. When evaluating a prompt, dterm will look for corresponding commands in the&nbsp;<code>/commands</code> folder. So let's create that one first:</p>
-<pre><code class="language-bash">&gt; mdkir commands</code></pre>
-    <p>Before we can create a new command in this folder, we'll also need a text editor. The following commands will install one for you:</p>
-<pre><code class="language-bash">&gt; term install dat://dcode.hashbase.io/commands/code.js
-# A basic editor based on CodeMirror
-
-&gt; term install dat://dcode.hashbase.io/commands/emacs.js
-# Same, but with Emacs keybindings
-
-&gt; term install dat://dcode.hashbase.io/commands/vim.js
-# Same, but with vim keybindings</code></pre>
-    <p>After this, run <code>code commands/hello-world.js</code> (or vim/emacs if that's what you went for) and an editor window will open in a new tab. Enter the following code to define a basic command and press <code>Control-S</code> (or the corresponding vim/emacs command) to save:</p>
-<pre><code class="language-js">// hello-world.js
-export default function () {
-  return 'Hello, world!'
-}</code></pre>
-    <p>As you see, our command is a basic ES module file. When invoked, dterm will execute the default export:</p>
-<pre><code class="language-bash">&gt; hello-world
-Hello, world!</code></pre><p>Now let's move into a different archive. You can call <code>dat ls</code> to show a list of dats saved on your machine, and click on the one you want to navigate into. It's also possible to use <code>cd</code> directly with any dat URL. For example, you can do this:</p><pre><code>&gt; cd dat://dterm.hashbase.io</code></pre><p>You will notice that the <code>hello-world</code> command we just created still works in this new environment. When evaluating prompts, dterm searches in the commands installed to <code>term.json</code>. If no matching command is found, dterm first tries the <code>/commands</code> folder of the current active dat, and after that the <code>/commands</code> folder of the home dat. If none of these locations contains a match, an error is thrown.</p><p>Of course you'll want to go further than a simple "Hello World!". In the next section we'll introduce some more advanced features you can use to create custom commands.</p>
-    <h2 id="defining-commands">Advanced commands</h2>
-    <h3 id="arguments">Arguments</h3>
-    <p>All command modules export a default function which accepts an options object and positional arguments, and returns a JS value or object. Here's an example which echos the arguments:</p>
-<pre><code class="language-js">// echo.js
-export default function (opts, ...args) {
-  return JSON.stringify(opts) + args.join(' ')
-}</code></pre>
-    <p>Invocation:</p>
-<pre><code class="language-bash">&gt; echo -abc --hello world this is my echo
-{"a": true, "b": true, "c": true, "hello": "world"} this is my echo</code></pre>
-    <h3>Subcommands</h3>
-    <p>All non-default exports on a command module can be accessed as subcommands. This is a help function for the above <code>echo</code> example:</p>
-<pre><code class="language-js">// echo.js
-export function help () {
-  return 'echo &lt;opts&gt; [...args]'
-}</code></pre>
-    <p>Invocation:</p>
-<pre><code class="language-bash">&gt; echo help
-echo &lt;opts&gt; [...args]</code></pre>
-    <h3 id="async">Async</h3><p>Commands can be asynchronous. The terminal will be blocked until the async function returns. For example, a naive <code>curl</code> implementation could look like this:</p><pre><code class="language-js">// curl.js
-export default async function (opts, url) {
-  var res = await fetch(url)
-  return res.text()
-}</code></pre><p>Generators and iterators are also supported. These will be rendered item-per-item as streams. Take for example this basic <code>cat</code> command. (For a more feature-complete version, see <a href="/commands/cat.js">here</a>.)</p><pre><code class="language-js">// cat.js
-import pwd from 'dat://dterm.hashase.io/commands/pwd.js'
-
-export default async function* (opts, ...files) {
-  var dat = new DatArchive(pwd())
-
-  for await (let file of files) {
-    yield dat.readFile(file)
-  }
-}</code></pre><h3 id="rendering">Rendering</h3>
-    <p>The command may specify a <code>toHTML</code> function on the response object. This method will be invoked if/when the output is rendered to the cli.</p>
-<pre><code class="language-js">// hello-big-world.js
-export default function () {
-  return {
-    toHTML: () =&gt; '&lt;h1&gt;HELLO WORLD!&lt;/h1&gt;'
-  }
-}</code></pre>
-    <p>Errors don't need any specific rendering logic. Any <code>Error</code> instances returned (or yielded) by the command will be rendered as errors in the terminal.</p><pre><code class="language-js">export default function (opts, file) {
-  try {
-    return await archive.readFile(file)
-  } catch (err) {
-    return err
-  }
-}</code></pre>
-    
-
-    
-
-    <h2 id="license">License</h2>
-    <p>AGPL-v3.0</p>
-
-</main>
-
-
-
-
-
-
-
-</body>
-</html>
+    <main id="dterm-docs" contenteditable="false"><h1>dterm</h1><p>Distributed Terminal.</p><h2>Getting started</h2><p>When using dterm for the first time, you will be asked to select an archive to function as your terminal's home directory. This is where dterm will store its settings in a <code>term.json</code> file. For this reason, you can only choose a dat you own. Alternatively, you can create a new archive. For the purpose of this tutorial, let's go with that option. Note that you can choose a different home dat at any time using the <code>term --home</code> command.</p><p>Now that we've got our home dat, let's use it to create our first custom command. When evaluating a prompt, dterm will look for corresponding commands in the&nbsp;<code>/commands</code> folder. So let's create that one first:</p><pre class="cs">&gt; mdkir commands</pre><p>Before we can create a new command in this folder, we'll also need a text editor. For this you can <a href="https://dcode.hashbase.io">install dcode</a>. Then enter the following code in your editor to define a basic command:</p><pre class="javascript">// hello-world.js<br>export default function () {<br>  return 'Hello, world!'<br>}</pre><p>As you see, our command is a basic ES module file. When invoked, dterm will execute the default export:</p><pre class="nohighlight">&gt; hello-world<br>Hello, world!</pre><p>Now let's move into a different archive. You can call <code>dat ls</code> to show a list of dats saved on your machine, and click on the one you want to navigate into. It's also possible to use <code>cd</code> directly with any dat URL. For example, you can do this:</p><pre class="nohighlight">&gt; cd dat://dterm.hashbase.io</pre><p>You will notice that the <code>hello-world</code> command we just created still works in this new environment. When evaluating prompts, dterm searches in the commands installed to <code>term.json</code>. If no matching command is found, dterm first tries the <code>/commands</code> folder of the current active dat, and after that the <code>/commands</code> folder of the home dat. If none of these locations contains a match, an error is thrown.</p><p>Of course you'll want to go further than a simple "Hello World". In the next section we'll introduce some more advanced features you can use to create custom commands.</p><h2>Advanced commands</h2><h3>Arguments</h3><p>All command modules export a default function which accepts an options object and positional arguments, and returns a JS value or object. Here's an example which echos the arguments:</p><pre class="javascript">// echo.js<br>export default function (opts, ...args) {<br>  return JSON.stringify(opts) + args.join(' ')<br>}</pre><p>Invocation:</p><pre class="nohighlight">&gt; echo -abc --hello world this is my echo<br>{"a": true, "b": true, "c": true, "hello": "world"} this is my echo</pre><h3>Subcommands</h3><p>All non-default exports on a command module can be accessed as subcommands. This is a help function for the above <code>echo</code> example:</p><pre class="javascript">// echo.js<br>export function help () {<br>  return 'echo &lt;opts&gt; [...args]'<br>}</pre><p><br>Invocation:</p><pre class="nohighlight">&gt; echo help<br>echo &lt;opts&gt; [...args]</pre><h3>Async</h3><p>Commands can be asynchronous. The terminal will be blocked until the async function returns. For example, a naive <code>curl</code> implementation could look like this:</p><pre class="javascript">// curl.js<br>export default async function (opts, url) {<br>  var res = await fetch(url)<br>  return res.text()<br>}</pre><p>Generators and iterators are also supported. These will be rendered item-per-item as streams. Take for example this basic <code>cat</code> command:</p><pre class="javascript">// cat.js<br>export default async function* (opts, ...files) {<br>  for await (let file of files) {<br>    var url = new URL(file)<br>    var dat = new DatArchive(url.origin)<br>    yield dat.readFile(file)<br>  }<br>}</pre><h3>Rendering</h3><p>The command may specify a <code>toHTML</code> function on the response object. This method will be invoked if/when the output is rendered to the cli.</p><pre class="javascript">// hello-big-world.js<br>export default function () {<br>  return {<br>    toHTML: () =&gt; '&lt;h1&gt;HELLO WORLD!&lt;/h1&gt;'<br>  }<br>}</pre><p>Errors don't need any specific rendering logic. Any <code>Error</code> instances returned (or yielded) by the command will be rendered as errors in the terminal.</p><pre class="javascript">export default function (opts, file) {<br>  try {<br>    return await archive.readFile(file)<br>  } catch (err) {<br>    return err<br>  }<br>}</pre><h2>License</h2><p>AGPL-v3.0</p></main>
+</body></html>
