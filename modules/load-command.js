@@ -1,11 +1,11 @@
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import publicState from './public-state.js'
 
-export default async function (cmd, location) {
-  return import(await findCommand(cmd, location))
+export default async function (cmd) {
+  return import(await findCommand(cmd))
 }
 
-export async function findCommand (cmd, location) {
+export async function findCommand (cmd) {
   let {env, cwd, home} = publicState
   let installed = env.commands[cmd]
 
