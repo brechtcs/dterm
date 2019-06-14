@@ -5,10 +5,17 @@
 
 body {
   font-size: 14px;
+  margin: 0;
+}
+
+main, iframe {
+  border: none;
+  padding: 0 1em;
+  width: 100%;
 }
 
 main {
-  padding: 1rem;
+  padding-top: 1em;
 }
 
 /**
@@ -69,9 +76,6 @@ main {
 .output .error .error-header::before {
   content: '▸ ';
 }
-.output .error.open .error-header::before {
-  content: '▾ ';
-}
 .output .error .error-stack {
   display: none;
   padding: 1rem;
@@ -81,7 +85,12 @@ main {
   white-space: pre;
   overflow-x: auto;
 }
-.output .error.open .error-stack {
+.output .error:active .error-header::before,
+.output .error:hover .error-header::before {
+  content: '▾ ';
+}
+.output .error:active .error-stack,
+.output .error:hover .error-stack {
   display: block;
 }
 

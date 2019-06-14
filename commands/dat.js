@@ -1,3 +1,4 @@
+import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import cd from './cd.js'
 import html from '../vendor/nanohtml-v1.2.4.js'
 import publicState from '../modules/public-state.js'
@@ -50,16 +51,13 @@ export async function ls (opts = {}) {
 }
 
 function archiveInfo (item) {
+  let url = parseUrl(window.location.origin)
+  url.location = item.url
+
   let hash = new URL(item.url).host
   let el = html`<div class="text-default"></div>`
-  let link = html`<a href=${item.url}>${shortenHash(hash)}</a>`
+  let link = html`<a href=${url} target="_blank">${shortenHash(hash)}</a>`
   el.appendChild(link)
-
-  link.addEventListener('click', e => {
-    e.preventDefault()
-    e.stopPropagation()
-    window.evalCommand(`cd ${item.url}`)
-  })
 
   if (item.title || item.description) {
     el.appendChild(html`<small> (${item.title || item.description})</small>`)

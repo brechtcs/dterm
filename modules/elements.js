@@ -15,11 +15,7 @@ export function error (err) {
   let el = html`<div class="error"></div>`
   let header = html`<div class="error-header">${err.message}</div>`
   let stack = html `<div class="error-stack"></div>`
-  stack.innerHTML = err.stack
-
-  header.addEventListener('click', function () {
-    el.classList.toggle('open')
-  })
+  stack.innerText = err.stack
 
   el.appendChild(header)
   el.appendChild(stack)

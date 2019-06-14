@@ -10,6 +10,7 @@ export default async function (opts = {}, location = '') {
   let listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
 
   return listing.sort(dirsFirst).map(entry => {
+    entry.url = resolveUrl(entry.name, lsDir)
     entry.toHTML = () => listItem(entry, lsDir, opts.all || opts.a)
     return entry
   })
@@ -21,22 +22,11 @@ function dirsFirst (a, b) {
   return a.name.localeCompare(b.name)
 }
 
-function listItem (entry, dir, all) {
-  let url = dir.archive.url + '/' + joinPath(dir.path, entry.name)
+function listItem (entry, all) {
+  let url = entry.stat.isDirectory() ? entry.url.href : entry.url.location
   let dotfile = entry.name.startsWith('.')
 
-  let el = html`<div class=${dotfile ? 'text-muted' : 'text-default'}></div>`
-  let link = html`<a href=${url} target="_blank">${shortenHash(entry.name)}</a>`
-  el.appendChild(link)
-
-  if (dotfile && !all) el.setAttribute('hidden', '')
-  if (entry.stat.isDirectory()) {
-    link.style.fontWeight = 'bold'
-    link.addEventListener('click', function (e) {
-      e.preventDefault()
-      e.stopPropagation()
-      window.evalCommand(`cd ${url}`)
-    })
-  }
-  return el
+  let name = entry.stat.isDirectory() ? html`<strong>${entry.name}</strong>` : entry.name
+  let link = html`<a href=${url} target="_blank">${name}</a>`
+  return html`<div class=${dotfile ? 'text-muted' : 'text-default'}>${link}</div>`
 }

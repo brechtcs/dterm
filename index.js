@@ -3,6 +3,7 @@ import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
 import {terminal, error, welcome} from './modules/elements.js'
+import {sanitizeNode} from './modules/dom-nodes.js'
 import {selectHome} from './modules/home-dat.js'
 import control from './modules/controller.js'
 import getStream from './modules/get-stream.js'
@@ -130,6 +131,9 @@ function commands (state, emitter) {
       output = JSON.stringify(output).replace(/^"|"$/g, '')
     }
 
+    if (output instanceof Element) {
+      output = sanitizeNode(output)
+    }
     state.entries[state.entries.length - 1].out.push(output)
     emitter.emit('render', true)
   })
