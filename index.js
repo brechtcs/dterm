@@ -1,8 +1,8 @@
 import {DTERM_HOME, DTERM_HISTORY} from './modules/constants.js'
+import {TerminalElement, ErrorElement, WelcomeElement} from './modules/elements.js'
 import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
-import {terminal, error, welcome} from './modules/elements.js'
 import {sanitizeNode} from './modules/dom-nodes.js'
 import {selectHome} from './modules/home-dat.js'
 import control from './modules/controller.js'
@@ -11,8 +11,7 @@ import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
 import publicState from './modules/public-state.js'
 
-let term = control('main')
-term.view(terminal)
+const term = control('main')
 term.use(dterm)
 term.use(render)
 term.use(focus)
@@ -21,6 +20,7 @@ term.use(keyboard)
 term.use(history)
 term.use(menu)
 term.use(debug)
+term.view(TerminalElement)
 term.mount()
 
 /**
@@ -70,7 +70,7 @@ function commands (state, emitter) {
   state.entries = [{
     cwd: null,
     in: null,
-    out: [welcome()]
+    out: [WelcomeElement()]
   }]
 
   emitter.on('cmd:change', function (cmd) {
@@ -124,7 +124,7 @@ function commands (state, emitter) {
     if (typeof output === 'undefined') {
       output = ''
     } else if (output instanceof Error) {
-      output = error(output)
+      output = ErrorElement(output)
     } else if (typeof output.toHTML === 'function') {
       output = output.toHTML()
     } else if (typeof output !== 'string' && !(output instanceof Element)) {

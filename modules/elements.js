@@ -2,16 +2,16 @@ import html from '../vendor/nanohtml-v1.2.4.js'
 import publicState from './public-state.js'
 import shortenHash from './shorten-hash.js'
 
-export function terminal (state, emit) {
+export function TerminalElement (state, emit) {
   return html`<main>
     <div class="output">
       ${state.entries.map(output)}
     </div>
-    ${prompt(state.public.cwd, state.public.prompt, emit)}
+    ${PromptElement(state.public.cwd, state.public.prompt, emit)}
   </main>`
 }
 
-export function error (err) {
+export function ErrorElement (err) {
   let el = html`<div class="error"></div>`
   let header = html`<div class="error-header">${err.message}</div>`
   let stack = html `<div class="error-stack"></div>`
@@ -22,7 +22,7 @@ export function error (err) {
   return el
 }
 
-export function prompt (cwd, value, emit) {
+export function PromptElement (cwd, value, emit) {
   let interactive = !!emit
   let home = publicState.home
   let prompt = (cwd && cwd.key !== home.key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
@@ -45,7 +45,7 @@ export function prompt (cwd, value, emit) {
 
 }
 
-export function welcome () {
+export function WelcomeElement () {
   return html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`
 }
 
@@ -55,7 +55,7 @@ export function welcome () {
 function output (entry) {
   let out, el = html`<div class="entry"></div>`
   if (typeof entry.in === 'string') {
-    el.appendChild(prompt(entry.cwd, entry.in))
+    el.appendChild(PromptElement(entry.cwd, entry.in))
   }
   for (out of entry.out) {
     el.appendChild(content(out))
