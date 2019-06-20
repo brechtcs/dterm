@@ -4,9 +4,13 @@ export function sanitizeNode (node) {
 
 export function deflateNode (node) {
   let {nodeName, textContent} = node
+
+  if (nodeName === 'iframe') {
+    throw new Error('Commands are not allowed to render iframes')
+  }
+
   let attributes = []
   let childNodes = []
-
 
   for (let child of node.childNodes) {
     childNodes.push(deflateNode(child))
