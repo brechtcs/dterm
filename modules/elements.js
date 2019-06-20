@@ -13,7 +13,7 @@ export function TerminalElement (state, emit) {
 
 export function ErrorElement (err) {
   let el = html`<div class="error"></div>`
-  let header = html`<div class="error-header">${err.message}</div>`
+  let header = html`<div class="error-header">${err.description || err.message}</div>`
   let stack = html `<div class="error-stack"></div>`
   stack.innerText = err.stack
 
@@ -25,7 +25,7 @@ export function ErrorElement (err) {
 export function PromptElement (cwd, value, emit) {
   let interactive = !!emit
   let home = publicState.home
-  let prompt = (cwd && cwd.key !== home.key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
+  let prompt =  cwd && `dat://${shortenHash(cwd.key)}/${cwd.path}`
   let input = html`<input value=${value || ''} disabled>`
   let el = html`<div class="prompt">${prompt} ${input}</div>`
 

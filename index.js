@@ -1,10 +1,10 @@
-import {DTERM_HOME, DTERM_HISTORY} from './modules/constants.js'
+import {DTERM_HISTORY} from './modules/constants.js'
 import {TerminalElement, ErrorElement, WelcomeElement} from './modules/elements.js'
-import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
-import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import {createSettings, readSettings} from './modules/settings.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
+import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import {parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {sanitizeNode} from './modules/dom-nodes.js'
-import {selectHome} from './modules/home-dat.js'
 import control from './modules/controller.js'
 import getStream from './modules/get-stream.js'
 import loadCommand from './modules/load-command.js'
@@ -12,7 +12,7 @@ import parseCommand from './modules/parse-command.js'
 import publicState from './modules/public-state.js'
 
 const term = control('main')
-term.use(dterm)
+term.use(init)
 term.use(render)
 term.use(focus)
 term.use(commands)
@@ -26,21 +26,33 @@ term.mount()
 /**
  * Handlers
  */
-async function dterm (state, emitter) {
+async function init (state, emitter) {
   state.public = publicState
 
   try {
-    await selectHome(localStorage.getItem(DTERM_HOME))
-    state.public.cwd = parseUrl(window.location)
-    state.public.prompt = ''
+    state.public.env = await readSettings()
+    emitter.emit('render')
+  } catch (err) {
+    state.public.env = createSettings()
+  }
 
+  try {
+    if (window.location.pathname === '/') {
+      let filters = {isOwner: true}
+      let dat = await DatArchive.selectArchive({filters})
+      state.public.cwd = resolveUrl(dat.url, window.location)
+    } else {
+      state.public.cwd = parseUrl(window.location)
+    }
     let info = await state.public.cwd.archive.getInfo()
     state.public.title = info.title
+    state.public.prompt = ''
 
     emitter.emit('render')
     emitter.emit('focus')
   } catch (err) {
-    emitter.emit('cmd:out', err, true)
+    err.name = 'TerminalInitError'
+    emitter.emit('cmd:out', err)
   }
 }
 
