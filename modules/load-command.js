@@ -6,18 +6,14 @@ export default async function (cmd) {
 }
 
 export async function findCommand (cmd) {
-  let {env, cwd, home} = publicState
+  let {env, cwd} = publicState
   let installed = env.commands[cmd]
 
   if (installed) {
     return installed
   }
   try {
-    try {
-      return await findInArchive(cwd, cmd)
-    } catch (err) {
-      return await findInArchive(home, cmd)
-    }
+    return await findInArchive(cwd, cmd)
   } catch (err) {
     throw new Error(cmd + ': command not found')
   }

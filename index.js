@@ -252,12 +252,6 @@ function menu (state, emitter) {
     let last = parts.pop()
     let pattern = isGlob(last) ? last : last + '*'
 
-    if (last.startsWith('~')) {
-      archive = state.public.home.archive
-      path = state.public.home.path
-      pattern = pattern.slice(1).replace(/^\//, '')
-    }
-
     if (state.menu.cursor < 0) {
       let menu = await glob(archive, {
         pattern: path ? joinPath(path, pattern) : pattern,
@@ -271,7 +265,6 @@ function menu (state, emitter) {
     let item = state.menu.items[cursor]
 
     if (item) {
-      item = last.startsWith('~') ? '~/' + item : item
       state.menu.cursor = cursor
       state.public.prompt = parts.join(' ') + ' ' + item
       emitter.emit('render')

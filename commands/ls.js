@@ -5,8 +5,8 @@ import publicState from '../modules/public-state.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 export default async function (opts = {}, location = '') {
-  let {cwd, home} = publicState
-  let lsDir = resolveUrl(location, cwd, home)
+  let {cwd} = publicState
+  let lsDir = resolveUrl(location, cwd)
   let listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
 
   return listing.sort(dirsFirst).map(entry => {

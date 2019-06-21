@@ -8,9 +8,9 @@ export default async function* (opts, from, to) {
   assert(from, 'Please specify a source and destination')
   assert(to, 'Please specify a destination')
 
-  let {cwd, home} = publicState
-  let src = resolveUrl(from, cwd, home)
-  let dst = resolveUrl(to, cwd, home)
+  let {cwd} = publicState
+  let src = resolveUrl(from, cwd)
+  let dst = resolveUrl(to, cwd)
   let file, path
 
   if (!isGlob(src.path)) {

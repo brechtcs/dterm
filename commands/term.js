@@ -53,10 +53,10 @@ export async function config (opts = {}) {
 }
 
 export async function install (opts, location, name) {
-  let {cwd, home} = publicState
+  let {cwd} = publicState
   let settings = await readSettings()
-  let entry = resolveUrl(location, cwd, home)
-  settings.commands[name || entry.name] = entry.location
+  let url = resolveUrl(location, cwd)
+  settings.commands[name || url.name] = url.location
   return saveSettings(settings)
 }
 

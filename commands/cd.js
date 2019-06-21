@@ -22,7 +22,7 @@ export default async function (opts = {}, ...args) {
 }
 
 async function getNextCwd (prev, location) {
-  let cwd = resolveUrl(location, prev, publicState.home)
+  let cwd = resolveUrl(location, prev)
   let stat = await cwd.archive.stat(cwd.path)
 
   if (!stat.isDirectory()) {
@@ -33,7 +33,7 @@ async function getNextCwd (prev, location) {
 
 function getLocation (args) {
   if (args.length > 1) return args[1].toString()
-  return args[0] ? args[0].toString() : '~'
+  return args[0] ? args[0].toString() : '/'
 }
 
 function getVersion (args) {

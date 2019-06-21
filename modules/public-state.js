@@ -1,11 +1,9 @@
-import {DTERM_HOME} from './constants.js'
 import {DistributedFilesURL} from 'dat://dfurl.hashbase.io/modules/url.js'
 import assert from 'dat://dfurl.hashbase.io/modules/assert.js'
 
 const obj = {}
 const store = {
   title: '',
-  home: null,
   env: null,
   cwd: null,
   prompt: false
@@ -22,15 +20,12 @@ const state = {
   },
 
   get home () {
-    return store.home
+    console.warn('Home archive feature was deprecated')
+    return null
   },
 
   set home (home) {
-    if (store.home) {
-      throw new Error('Cannot overwrite home property')
-    }
-    assert(home instanceof DistributedFilesURL, 'home should be DistributedFilesURL object')
-    store.home = Object.freeze(home)
+    console.warn('Home archive feature was deprecated')
   },
 
   get env () {
@@ -54,9 +49,7 @@ const state = {
   },
 
   set cwd (next) {
-    next = next.key ? next : this.home
     assert(next instanceof DistributedFilesURL, 'cwd should be DistributedFilesURL object')
-
     window.history.pushState(null, obj, next.pathname)
     store.cwd = next
   },

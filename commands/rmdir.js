@@ -5,11 +5,11 @@ import publicState from '../modules/public-state.js'
 export default async function* (opts, ...patterns) {
   opts = {recursive: opts.r || opts.recursive}
 
-  let {cwd, home} = publicState
+  let {cwd} = publicState
   let pattern, dir
 
   for (pattern of patterns) {
-    let target = resolveUrl(pattern, cwd, home)
+    let target = resolveUrl(pattern, cwd)
 
     if (!isGlob(target.path)) {
       yield rm(target.archive, target.path, opts)

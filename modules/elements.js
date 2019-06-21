@@ -24,7 +24,6 @@ export function ErrorElement (err) {
 
 export function PromptElement (cwd, value, emit) {
   let interactive = !!emit
-  let home = publicState.home
   let prompt =  cwd && `dat://${shortenHash(cwd.key)}/${cwd.path}`
   let input = html`<input value=${value || ''} disabled>`
   let el = html`<div class="prompt">${prompt} ${input}</div>`
