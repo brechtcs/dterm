@@ -2,6 +2,7 @@ import {DTERM_HISTORY} from './modules/constants.js'
 import {TerminalElement, ErrorElement, WelcomeElement} from './modules/elements.js'
 import {createSettings, readSettings} from './modules/settings.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
+import {href} from './vendor/nanohref-v3.1.0.js'
 import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import {parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {sanitizeNode} from './modules/dom-nodes.js'
@@ -19,6 +20,7 @@ term.use(commands)
 term.use(keyboard)
 term.use(history)
 term.use(menu)
+term.use(links)
 term.use(debug)
 term.view(TerminalElement)
 term.mount()
@@ -278,6 +280,13 @@ function menu (state, emitter) {
 
   emitter.on('menu:reset', function () {
     state.menu = {cursor: -1}
+  })
+}
+
+function links (state, emitter) {
+  href(function (anchor) {
+    let target = parseUrl(anchor)
+    emitter.emit('cmd:enter', 'cd ' + target.location)
   })
 }
 

@@ -23,10 +23,15 @@ function dirsFirst (a, b) {
 }
 
 function listItem (entry, all) {
-  let url = entry.stat.isDirectory() ? entry.url.href : entry.url.location
+  let url = entry.stat.isDirectory() ? entry.url.pathname : entry.url.location
   let dotfile = entry.name.startsWith('.')
 
   let name = entry.stat.isDirectory() ? html`<strong>${entry.name}</strong>` : entry.name
-  let link = html`<a href=${url} target="_blank">${name}</a>`
+  let link = html`<a href=${url}>${name}</a>`
+
+  if (entry.stat.isFile()) {
+    link.setAttribute('target', '_blank')
+    link.setAttribute('rel', 'noopener noreferrer')
+  }
   return html`<div class=${dotfile ? 'text-muted' : 'text-default'}>${link}</div>`
 }
