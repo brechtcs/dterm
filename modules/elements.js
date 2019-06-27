@@ -25,14 +25,14 @@ export function ErrorElement (err) {
 export function PromptElement (cwd, value, emit) {
   let interactive = !!emit
   let prompt =  cwd && `dat://${shortenHash(cwd.key)}/${cwd.path}`
-  let input = html`<input value=${value || ''} disabled>`
+  let input = html`<input value=${value || ''} readonly>`
   let el = html`<div class="prompt">${prompt} ${input}</div>`
 
   if (value === false) el.setAttribute('hidden', '')
   if (!interactive) return el
 
   input.classList.add('interactive')
-  input.removeAttribute('disabled')
+  input.removeAttribute('readonly')
   input.addEventListener('keyup', function (e) {
     let action = (e.code === 'Enter')
       ? 'cmd:enter'
