@@ -1,5 +1,4 @@
 import html from '../vendor/nanohtml-v1.2.4.js'
-import publicState from './public-state.js'
 import shortenHash from './shorten-hash.js'
 
 export function TerminalElement (state, emit) {
@@ -7,7 +6,7 @@ export function TerminalElement (state, emit) {
     <div class="output">
       ${state.entries.map(output)}
     </div>
-    ${PromptElement(state.public.cwd, state.public.prompt, emit)}
+    ${PromptElement(window.cwd, state.prompt, emit)}
   </main>`
 }
 

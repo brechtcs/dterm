@@ -1,21 +1,21 @@
 import {DTERM_HISTORY} from './modules/constants.js'
+import {DistributedFilesURL, parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {TerminalElement, ErrorElement, WelcomeElement} from './modules/elements.js'
 import {createSettings, readSettings} from './modules/settings.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
 import {href} from './vendor/nanohref-v3.1.0.js'
 import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
-import {parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {sanitizeNode} from './modules/dom-nodes.js'
 import control from './modules/controller.js'
 import getStream from './modules/get-stream.js'
 import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
-import publicState from './modules/public-state.js'
 
 const term = control('main')
 term.use(init)
 term.use(render)
 term.use(focus)
+term.use(location)
 term.use(commands)
 term.use(keyboard)
 term.use(history)
@@ -29,27 +29,27 @@ term.mount()
  * Handlers
  */
 async function init (state, emitter) {
-  state.public = publicState
+  state.prompt = false
 
   try {
-    state.public.env = await readSettings()
+    window.env = await readSettings()
     emitter.emit('render')
   } catch (err) {
-    state.public.env = createSettings()
+    window.env = createSettings()
   }
 
   try {
     if (window.location.pathname === '/') {
       let filters = {isOwner: true}
       let dat = await DatArchive.selectArchive({filters})
-      state.public.cwd = resolveUrl(dat.url, window.location)
+      emitter.emit('location:set', resolveUrl(dat.url, window.location))
     } else {
-      state.public.cwd = parseUrl(window.location)
+      emitter.emit('location:set', parseUrl(window.location))
     }
-    let info = await state.public.cwd.archive.getInfo()
-    state.public.title = info.title
-    state.public.prompt = ''
+    let info = await window.cwd.archive.getInfo()
+    document.title = info.title + ' - dterm'
 
+    state.prompt = ''
     emitter.emit('render')
     emitter.emit('focus')
   } catch (err) {
@@ -80,6 +80,17 @@ function focus (state, emitter) {
   }
 }
 
+function location (state, emitter) {
+  emitter.on('location:set', function (cwd) {
+    if (cwd instanceof DistributedFilesURL) {
+      window.history.pushState({}, null, cwd.pathname)
+      window.cwd = cwd
+    } else {
+      throw new Error('Illegal state: invalid working directory')
+    }
+  })
+}
+
 function commands (state, emitter) {
   state.entries = [{
     cwd: null,
@@ -88,13 +99,13 @@ function commands (state, emitter) {
   }]
 
   emitter.on('cmd:change', function (cmd) {
-    state.public.prompt = cmd
+    state.prompt = cmd
   })
 
   emitter.on('cmd:enter', function (cmd) {
-    state.public.prompt = false
+    state.prompt = false
     state.entries.push({
-      cwd: state.public.cwd,
+      cwd: window.cwd,
       in: cmd,
       out: []
     })
@@ -153,8 +164,8 @@ function commands (state, emitter) {
   })
 
   emitter.on('cmd:done', function () {
-    state.public.prompt = state.public.prompt || ''
-    state.public.cwd = parseUrl(window.location)
+    state.prompt = state.prompt || ''
+    emitter.emit('location:set', window.cwd)
     emitter.emit('render', true)
   })
 
@@ -214,19 +225,19 @@ function history (state, emitter) {
   emitter.on('hist:up', function () {
     if (state.history.cursor === -1) return ''
     state.history.cursor = Math.max(0, state.history.cursor - 1)
-    state.public.prompt = state.history[state.history.cursor]
+    state.prompt = state.history[state.history.cursor]
     emitter.emit('render')
   })
 
   emitter.on('hist:down', function () {
     state.history.cursor = Math.min(state.history.length, state.history.cursor + 1)
-    state.public.prompt = state.history[state.history.cursor] || ''
+    state.prompt = state.history[state.history.cursor] || ''
     emitter.emit('render')
   })
 
   emitter.on('hist:reset', function () {
     state.history.cursor = state.history.length
-    state.public.prompt = ''
+    state.prompt = ''
     emitter.emit('render')
   })
 
@@ -244,11 +255,11 @@ function menu (state, emitter) {
   state.menu = {cursor: -1}
 
   emitter.on('menu:nav', async function (back) {
-    if (!state.public.cwd || state.public.prompt.indexOf(' ') < 0) {
+    if (!window.cwd || state.prompt.indexOf(' ') < 0) {
       return
     }
-    let {archive, path} = state.public.cwd
-    let parts = state.public.prompt.split(' ')
+    let {archive, path} = window.cwd
+    let parts = state.prompt.split(' ')
     let last = parts.pop()
     let pattern = isGlob(last) ? last : last + '*'
 
@@ -266,7 +277,7 @@ function menu (state, emitter) {
 
     if (item) {
       state.menu.cursor = cursor
-      state.public.prompt = parts.join(' ') + ' ' + item
+      state.prompt = parts.join(' ') + ' ' + item
       emitter.emit('render')
     }
   })
