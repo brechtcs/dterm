@@ -5,7 +5,7 @@ export function sanitizeNode (node) {
 export function deflateNode (node) {
   let {nodeName, textContent} = node
 
-  if (nodeName === 'iframe') {
+  if (nodeName.toLowerCase() === 'iframe') {
     throw new Error('Commands are not allowed to render iframes')
   }
 
