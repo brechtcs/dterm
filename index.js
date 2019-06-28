@@ -11,6 +11,7 @@ import getStream from './modules/get-stream.js'
 import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
 
+const params = new URLSearchParams(window.location.search)
 const term = control('main')
 term.use(init)
 term.use(render)
@@ -294,6 +295,15 @@ function links (state, emitter) {
   })
 }
 
-function debug () {
+function debug (state, emitter) {
+  if (!params.get('debug')) return
+
+  emitter.on('*', function (name, ...args) {
+    console.groupCollapsed(name)
+    console.warn('Trace')
+    args.forEach(console.dir)
+    console.groupEnd()
+  })
+
   window.term = term
 }
