@@ -6,8 +6,8 @@ export default async function (cmd) {
 }
 
 export async function findCommand (cmd) {
-  let {env, cwd} = publicState
-  let installed = env.commands[cmd]
+  let {cwd} = publicState
+  let installed = env && env.commands && env.commands[cmd]
 
   if (installed) {
     return installed

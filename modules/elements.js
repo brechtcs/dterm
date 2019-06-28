@@ -6,7 +6,7 @@ export function TerminalElement (state, emit) {
     <div class="output">
       ${state.entries.map(output)}
     </div>
-    ${PromptElement(window.cwd, state.prompt, emit)}
+    ${PromptElement(state.cwd, state.prompt, emit)}
   </main>`
 }
 
@@ -19,6 +19,14 @@ export function ErrorElement (err) {
   el.appendChild(header)
   el.appendChild(stack)
   return el
+}
+
+export function PreElement (content) {
+  if (typeof content === 'string' || typeof content === 'undefined') {
+    return html`<pre>${content || ''}</pre>`
+  } else {
+    return html`<pre>${JSON.stringify(content, null, 2)}</pre>`
+  }
 }
 
 export function PromptElement (cwd, value, emit) {
@@ -48,6 +56,10 @@ export function PromptElement (cwd, value, emit) {
 
   return el
 
+}
+
+export function SandboxElement () {
+  return html`<iframe src="/sandbox" sandbox="allow-scripts" hidden></iframe>`
 }
 
 export function WelcomeElement () {

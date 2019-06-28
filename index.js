@@ -1,11 +1,11 @@
 import {DTERM_HISTORY} from './modules/constants.js'
 import {DistributedFilesURL, parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
-import {TerminalElement, ErrorElement, WelcomeElement} from './modules/elements.js'
+import {TerminalElement, ErrorElement, SandboxElement, WelcomeElement} from './modules/elements.js'
 import {createSettings, readSettings} from './modules/settings.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
 import {href} from './vendor/nanohref-v3.1.0.js'
+import {inflateNode} from './modules/dom-nodes.js'
 import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
-import {sanitizeNode} from './modules/dom-nodes.js'
 import control from './modules/controller.js'
 import getStream from './modules/get-stream.js'
 import loadCommand from './modules/load-command.js'
@@ -17,6 +17,7 @@ term.use(init)
 term.use(render)
 term.use(focus)
 term.use(commands)
+term.use(sandbox)
 term.use(keyboard)
 term.use(history)
 term.use(menu)
@@ -29,29 +30,23 @@ term.mount()
  * Handlers
  */
 async function init (state, emitter) {
+  state.cwd = null
+  state.env = null
   state.prompt = false
 
   emitter.on('term:location', function (cwd) {
     if (cwd instanceof DistributedFilesURL) {
       window.history.pushState({}, null, cwd.pathname + window.location.search)
-      window.cwd = cwd
+      state.cwd = cwd
     } else {
       throw new Error('Illegal state: invalid working directory')
     }
   })
 
-  emitter.on('term:settings', function (env) {
-    Object.freeze(env)
-    Object.defineProperty(window, 'env', {
-      value: env,
-      writable: false
-    })
-  })
-
   try {
-    emitter.emit('term:settings', await readSettings())
+    state.env = await readSettings()
   } catch (err) {
-    emitter.emit('term:settings', createSettings())
+    state.env = createSettings()
   } finally {
     emitter.emit('render')
   }
@@ -64,7 +59,7 @@ async function init (state, emitter) {
     } else {
       emitter.emit('term:location', parseUrl(window.location))
     }
-    let info = await window.cwd.archive.getInfo()
+    let info = await state.cwd.archive.getInfo()
     document.title = info.title + ' - dterm'
 
     state.prompt = ''
@@ -112,31 +107,13 @@ function commands (state, emitter) {
   emitter.on('cmd:enter', function (cmd) {
     state.prompt = false
     state.entries.push({
-      cwd: window.cwd,
+      cwd: state.cwd,
       in: cmd,
       out: []
     })
 
     emitter.emit('render')
-    emitter.emit('cmd:eval', cmd.trim())
-  })
-
-  emitter.on('cmd:eval', async function (command) {
-    try {
-      let {cmd, args, opts} = parseCommand(command)
-      let mod = await loadCommand(cmd, window.location.pathname)
-      let fn = mod[args[0]] ? mod[args.shift()] : mod.default
-      let out = await fn(opts, ...args)
-      let stream = getStream(out)
-      let action = stream ? 'cmd:stream' : 'cmd:out'
-      emitter.emit(action, stream || out)
-      if (stream) return
-      emitter.emit('cmd:done')
-    } catch (err) {
-      console.error(err)
-      emitter.emit('cmd:out', err)
-      emitter.emit('cmd:done')
-    }
+    emitter.emit('sandbox:eval', cmd.trim())
   })
 
   emitter.on('cmd:stream', async function (it) {
@@ -153,26 +130,14 @@ function commands (state, emitter) {
   })
 
   emitter.on('cmd:out', function (output) {
-    if (typeof output === 'undefined') {
-      output = ''
-    } else if (output instanceof Error) {
-      output = ErrorElement(output)
-    } else if (typeof output.toHTML === 'function') {
-      output = output.toHTML()
-    } else if (typeof output !== 'string' && !(output instanceof Element)) {
-      output = JSON.stringify(output).replace(/^"|"$/g, '')
-    }
-
-    if (output instanceof Element) {
-      output = sanitizeNode(output)
-    }
+    output = output instanceof Error ? ErrorElement(output) : inflateNode(output.tree)
     state.entries[state.entries.length - 1].out.push(output)
     emitter.emit('render', {scroll: true})
   })
 
-  emitter.on('cmd:done', function () {
+  emitter.on('cmd:done', function ({cwd}) {
     state.prompt = state.prompt || ''
-    emitter.emit('term:location', window.cwd)
+    emitter.emit('term:location', parseUrl(cwd))
     emitter.emit('render', {focus: true, scroll: true})
   })
 
@@ -180,13 +145,41 @@ function commands (state, emitter) {
     state.entries = []
     emitter.emit('render')
   })
+}
 
-  window.clearHistory = function () {
-    emitter.emit('cmd:clear')
-  }
+function sandbox (state, emitter) {
+  let iframe = SandboxElement()
+  let token = .38
 
-  window.evalCommand = function (cmd) {
-    emitter.emit('cmd:enter', cmd)
+  window.addEventListener('message', function (msg) {
+    if (msg.data.token === token) {
+      return emitter.emit(msg.data.type, msg.data)
+    }
+  })
+
+  emitter.on('sandbox:eval', async function (cmd) {
+    await prepareSandbox()
+    let type = 'prompt:eval'
+    let cwd = state.cwd.toString()
+    let env = state.env
+
+    iframe.contentWindow.postMessage({type, token, cmd, cwd, env}, '*')
+  })
+
+  function prepareSandbox () {
+    return new Promise(function (resolve) {
+      iframe.addEventListener('load', function frameReady () {
+        iframe.removeEventListener('load', frameReady)
+        token = Math.random()
+        resolve()
+      })
+
+      if (iframe.parentNode) {
+        iframe.src = iframe.src
+      } else {
+        document.body.appendChild(iframe)
+      }
+    })
   }
 }
 
@@ -261,10 +254,10 @@ function menu (state, emitter) {
   state.menu = {cursor: -1}
 
   emitter.on('menu:nav', async function (opts = {}) {
-    if (!window.cwd || state.prompt.indexOf(' ') < 0) {
+    if (!state.cwd || state.prompt.indexOf(' ') < 0) {
       return
     }
-    let {archive, path} = window.cwd
+    let {archive, path} = state.cwd
     let parts = state.prompt.split(' ')
     let last = parts.pop()
     let pattern = isGlob(last) ? last : last + '*'
