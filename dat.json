@@ -1,8 +1,5 @@
 {
   "title": "dterm",
   "description": "Terminal for the distributed web",
-  "fallback_page": "/index.html",
-  "experimental": {
-    "apis": ["library"]
-  }
+  "fallback_page": "/index.html"
 }
