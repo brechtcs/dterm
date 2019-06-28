@@ -32,11 +32,18 @@ export function PromptElement (cwd, value, emit) {
 
   input.classList.add('interactive')
   input.removeAttribute('readonly')
-  input.addEventListener('keyup', function (e) {
-    let action = (e.code === 'Enter')
-      ? 'cmd:enter'
-      : 'cmd:change'
-    emit(action, input.value)
+
+  input.addEventListener('keydown', function (e) {
+    if (e.code === 'Tab') {
+      e.preventDefault()
+      emit('menu:nav', {back: e.shiftKey})
+    } else if (e.code === 'Enter') {
+      emit('cmd:enter', input.value)
+    }
+  })
+
+  input.addEventListener('input', function (e) {
+    emit('cmd:change', input.value)
   })
 
   return el

@@ -51,8 +51,7 @@ async function init (state, emitter) {
     document.title = info.title + ' - dterm'
 
     state.prompt = ''
-    emitter.emit('render')
-    emitter.emit('focus')
+    emitter.emit('render', {focus: true})
   } catch (err) {
     err.name = 'TerminalInitError'
     emitter.emit('cmd:out', err)
@@ -60,11 +59,13 @@ async function init (state, emitter) {
 }
 
 function render (state, emitter, term) {
-  emitter.on('render', function (scroll) {
+  emitter.on('render', function (opts = {}) {
     term.render()
-    emitter.emit('focus')
 
-    if (scroll) {
+    if (opts.focus) {
+      emitter.emit('focus')
+    }
+    if (opts.scroll) {
       window.scrollTo(0, document.body.scrollHeight)
     }
   })
@@ -72,7 +73,6 @@ function render (state, emitter, term) {
 
 function focus (state, emitter) {
   emitter.on('focus', setFocus)
-  document.addEventListener('keydown', setFocus, {capture: true})
   window.addEventListener('focus', setFocus)
 
   function setFocus () {
@@ -161,13 +161,13 @@ function commands (state, emitter) {
       output = sanitizeNode(output)
     }
     state.entries[state.entries.length - 1].out.push(output)
-    emitter.emit('render', true)
+    emitter.emit('render', {scroll: true})
   })
 
   emitter.on('cmd:done', function () {
     state.prompt = state.prompt || ''
     emitter.emit('location:set', window.cwd)
-    emitter.emit('render', true)
+    emitter.emit('render', {focus: true, scroll: true})
   })
 
   emitter.on('cmd:clear', function () {
@@ -186,13 +186,6 @@ function commands (state, emitter) {
 
 function keyboard (state, emitter) {
   document.addEventListener('keydown', function (e) {
-    if (e.code === 'Tab') {
-      e.preventDefault()
-      emitter.emit('menu:nav', e.shiftKey)
-    } else if (!e.shiftKey) {
-      emitter.emit('menu:reset')
-    }
-
     if (e.code === 'KeyL' && e.ctrlKey) {
       e.preventDefault()
       emitter.emit('cmd:clear')
@@ -202,11 +195,17 @@ function keyboard (state, emitter) {
     } else if (e.code === 'ArrowDown') {
       e.preventDefault()
       emitter.emit('hist:down')
-    } else if (e.code === 'Escape' || e.code === 'KeyC' && e.ctrlKey) {
+    } else if (e.code === 'Escape') {
       e.preventDefault()
       emitter.emit('hist:reset')
+    } else if (!isModifier(e)) {
+      emitter.emit('focus')
     }
   }, {capture: true})
+
+  function isModifier (e) {
+    return e.altKey || e.ctrlKey || e.metaKey || e.shiftKey
+  }
 }
 
 function history (state, emitter) {
@@ -255,7 +254,7 @@ function history (state, emitter) {
 function menu (state, emitter) {
   state.menu = {cursor: -1}
 
-  emitter.on('menu:nav', async function (back) {
+  emitter.on('menu:nav', async function (opts = {}) {
     if (!window.cwd || state.prompt.indexOf(' ') < 0) {
       return
     }
@@ -273,7 +272,7 @@ function menu (state, emitter) {
       state.menu.items = menu.map(item => relativePath(path, item)).sort()
     }
 
-    let cursor = back ? (state.menu.cursor - 1) : (state.menu.cursor + 1)
+    let cursor = opts.back ? (state.menu.cursor - 1) : (state.menu.cursor + 1)
     let item = state.menu.items[cursor]
 
     if (item) {
@@ -283,7 +282,7 @@ function menu (state, emitter) {
     }
   })
 
-  emitter.on('menu:reset', function () {
+  emitter.on('cmd:change', function () {
     state.menu = {cursor: -1}
   })
 }
