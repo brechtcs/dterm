@@ -16,7 +16,6 @@ const term = control('main')
 term.use(init)
 term.use(render)
 term.use(focus)
-term.use(location)
 term.use(commands)
 term.use(keyboard)
 term.use(history)
@@ -32,20 +31,38 @@ term.mount()
 async function init (state, emitter) {
   state.prompt = false
 
+  emitter.on('term:location', function (cwd) {
+    if (cwd instanceof DistributedFilesURL) {
+      window.history.pushState({}, null, cwd.pathname + window.location.search)
+      window.cwd = cwd
+    } else {
+      throw new Error('Illegal state: invalid working directory')
+    }
+  })
+
+  emitter.on('term:settings', function (env) {
+    Object.freeze(env)
+    Object.defineProperty(window, 'env', {
+      value: env,
+      writable: false
+    })
+  })
+
   try {
-    window.env = await readSettings()
-    emitter.emit('render')
+    emitter.emit('term:settings', await readSettings())
   } catch (err) {
-    window.env = createSettings()
+    emitter.emit('term:settings', createSettings())
+  } finally {
+    emitter.emit('render')
   }
 
   try {
     if (window.location.pathname === '/') {
       let filters = {isOwner: true}
       let dat = await DatArchive.selectArchive({filters})
-      emitter.emit('location:set', resolveUrl(dat.url, window.location))
+      emitter.emit('term:location', resolveUrl(dat.url, window.location))
     } else {
-      emitter.emit('location:set', parseUrl(window.location))
+      emitter.emit('term:location', parseUrl(window.location))
     }
     let info = await window.cwd.archive.getInfo()
     document.title = info.title + ' - dterm'
@@ -79,17 +96,6 @@ function focus (state, emitter) {
     let prompt = document.querySelector('.prompt .interactive')
     if (prompt) prompt.focus()
   }
-}
-
-function location (state, emitter) {
-  emitter.on('location:set', function (cwd) {
-    if (cwd instanceof DistributedFilesURL) {
-      window.history.pushState({}, null, cwd.pathname)
-      window.cwd = cwd
-    } else {
-      throw new Error('Illegal state: invalid working directory')
-    }
-  })
 }
 
 function commands (state, emitter) {
@@ -166,7 +172,7 @@ function commands (state, emitter) {
 
   emitter.on('cmd:done', function () {
     state.prompt = state.prompt || ''
-    emitter.emit('location:set', window.cwd)
+    emitter.emit('term:location', window.cwd)
     emitter.emit('render', {focus: true, scroll: true})
   })
 
