@@ -1,11 +1,10 @@
 import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import html from '../vendor/nanohtml-v1.2.4.js'
-import publicState from '../modules/public-state.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 export default async function (opts = {}, location = '') {
-  let {cwd} = publicState
+  let {cwd} = window
   let lsDir = resolveUrl(location, cwd)
   let listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
 

@@ -1,20 +1,16 @@
 import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
-import publicState from '../modules/public-state.js'
 
 import ls from './ls.js'
 
 export default async function (opts = {}, ...args) {
-  let {cwd, env} = publicState
+  let {cwd, env} = window
   let location = getLocation(args)
   let version = getVersion(args)
 
   let next = await getNextCwd(cwd, location)
-  let info = await next.archive.getInfo()
   if (version) next.version = version.replace(/^\+/, '')
-
-  publicState.title = info.title
-  publicState.cwd = next
+  window.cwd = next
 
   if (env.config['ls-after-cd']) {
     return ls()

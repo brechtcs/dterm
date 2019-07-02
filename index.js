@@ -31,10 +31,12 @@ term.mount()
 async function init (state, emitter) {
   state.prompt = false
 
-  emitter.on('term:location', function (cwd) {
+  emitter.on('term:location', async function (cwd) {
     if (cwd instanceof DistributedFilesURL) {
       window.history.pushState({}, null, cwd.pathname + window.location.search)
       window.cwd = cwd
+      let info = await window.cwd.archive.getInfo()
+      document.title = info.title + ' - dterm'
     } else {
       throw new Error('Illegal state: invalid working directory')
     }
@@ -66,8 +68,6 @@ async function init (state, emitter) {
     } else {
       emitter.emit('term:location', parseUrl(window.location))
     }
-    let info = await window.cwd.archive.getInfo()
-    document.title = info.title + ' - dterm'
 
     state.prompt = ''
     emitter.emit('render', {focus: true})
