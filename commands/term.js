@@ -79,7 +79,7 @@ async function readSettings () {
     let file = getSettingsFile()
     return JSON.parse(await file.read())
   } catch (err) {
-    if (err instanceof StrictStorageError) {
+    if (err instanceof StrictStorageError || err.name === 'NotFoundError') {
       return createSettings()
     }
     throw err
@@ -87,16 +87,33 @@ async function readSettings () {
 }
 
 async function saveSettings (settings, target) {
+  let file
+
   try {
-    let file = target || getSettingsFile()
+    file = target || getSettingsFile()
+    await file.archive.stat(file.path) // force error when parent does not exist
     await file.write(JSON.stringify(settings, null, 4))
     return maybeReload()
   } catch (err) {
+    if (err.name === 'NotFoundError') {
+      await file.archive.mkdir(file.parent)
+      await file.archive.writeFile(file.path, '')
+      return saveSettings(settings, file)
+    }
     err.description = 'Could not save dterm settings to file'
     return err
   }
 }
 
 function getSettingsFile () {
-  return resolveUrl(storage.getItem(DTERM_SETTINGS), window.cwd)
+  try {
+    return resolveUrl(storage.getItem(DTERM_SETTINGS), window.cwd)
+  } catch (err) {
+    if (err instanceof StrictStorageError) {
+      let url = resolveUrl('/.config/term.json', window.cwd)
+      storage.setItem(DTERM_SETTINGS, url.location)
+      return url
+    }
+    throw err
+  }
 }
