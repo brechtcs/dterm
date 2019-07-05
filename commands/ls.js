@@ -10,7 +10,7 @@ export default async function (opts = {}, location = '') {
 
   return listing.sort(dirsFirst).map(entry => {
     entry.url = resolveUrl(entry.name, lsDir)
-    entry.toHTML = () => listItem(entry, lsDir, opts.all || opts.a)
+    entry.toHTML = () => listItem(entry, opts.all || opts.a)
     return entry
   })
 }
@@ -27,10 +27,14 @@ function listItem (entry, all) {
 
   let name = entry.stat.isDirectory() ? html`<strong>${entry.name}</strong>` : entry.name
   let link = html`<a href=${url}>${name}</a>`
+  let el = html`<div class=${dotfile ? 'text-muted' : 'text-default'}>${link}</div>`
 
   if (entry.stat.isFile()) {
     link.setAttribute('target', '_blank')
     link.setAttribute('rel', 'noopener noreferrer')
   }
-  return html`<div class=${dotfile ? 'text-muted' : 'text-default'}>${link}</div>`
+  if (dotfile && !all) {
+    el.toggleAttribute('hidden')
+  }
+  return el
 }
