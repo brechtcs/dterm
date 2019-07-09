@@ -1,3 +1,6 @@
+const FORBIDDEN_NODES = ['iframe', 'link', 'meta', 'script', 'style']
+const IGNORED_ATTRS = ['style']
+
 export function sanitizeNode (node) {
   return inflateNode(deflateNode(node))
 }
@@ -5,8 +8,8 @@ export function sanitizeNode (node) {
 export function deflateNode (node) {
   let {nodeName, textContent} = node
 
-  if (nodeName.toLowerCase() === 'iframe') {
-    throw new Error('Commands are not allowed to render iframes')
+  if (FORBIDDEN_NODES.includes(nodeName.toLowerCase())) {
+    throw new Error(`Commands are not allowed to return ${nodeName} elements`)
   }
 
   let attributes = []
@@ -19,7 +22,9 @@ export function deflateNode (node) {
   if (node.attributes) {
     for (let i = 0; i < node.attributes.length; i++) {
       let {name, value} = node.attributes[i]
-      if (ignoreAttribute(name)) continue
+      if (IGNORED_ATTRS.includes(name.toLowerCase())) {
+        continue
+      }
       attributes.push({name, value})
     }
   }
@@ -41,8 +46,4 @@ export function inflateNode (tree) {
     el.appendChild(inflateNode(child))
   }
   return el
-}
-
-function ignoreAttribute (name) {
-  return name === 'style'
 }
