@@ -8,8 +8,8 @@ import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import {sanitizeNode} from './modules/dom-nodes.js'
 import control from './modules/controller.js'
 import getStream from './modules/get-stream.js'
-import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
+import which from './commands/which.js'
 
 const params = new URLSearchParams(window.location.search)
 const term = control('main')
@@ -139,7 +139,7 @@ function commands (state, emitter) {
   emitter.on('cmd:eval', async function (command) {
     try {
       let {cmd, args, opts} = parseCommand(command)
-      let mod = await loadCommand(cmd, window.location.pathname)
+      let mod = await import(await which(null, cmd))
       let fn = mod[args[0]] ? mod[args.shift()] : mod.default
       let out = await fn(opts, ...args)
       let stream = getStream(out)
