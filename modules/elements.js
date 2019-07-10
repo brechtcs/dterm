@@ -75,17 +75,7 @@ function output (entry) {
     el.appendChild(PromptElement(entry.cwd, entry.in))
   }
   for (out of entry.out) {
-    el.appendChild(content(out))
-  }
-  return el
-}
-
-function content (out) {
-  let el = html`<div class="entry-content"></div>`
-  if (out instanceof Element) {
     el.appendChild(out)
-  } else {
-    el.innerHTML = out
   }
   return el
 }

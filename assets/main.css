@@ -54,12 +54,12 @@ main {
   font-size: inherit;
 }
 
-.output .entry {
-  margin-bottom: 1rem;
+.output pre {
+  margin: 0;
 }
 
-.output .entry .entry-content {
-  white-space: pre;
+.output .entry {
+  margin-bottom: 1rem;
 }
 
 .output .info {
