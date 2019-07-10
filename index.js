@@ -39,7 +39,7 @@ function globals (state) {
     },
     set (cwd) {
       state.cwd = parseUrl(cwd)
-      window.history.pushState({}, null, cwd.pathname + window.location.search)
+      window.history.pushState({}, null, window.cwd.pathname + window.location.search)
       window.cwd.archive.getInfo().then(setTitle).catch(console.error)
     }
   })
