@@ -1,13 +1,12 @@
 import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
-import publicState from '../modules/public-state.js'
 
 export default async function (opts, ...args) {
-  let {cwd} = publicState
   let appendFlag = opts.a || opts.append
   let dst = opts.to
   let res = args.join(' ')
 
   if (dst) {
+    let {cwd} = window
     let target = resolveUrl(dst, cwd)
 
     if (appendFlag) {

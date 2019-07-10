@@ -3,8 +3,8 @@ import {deflateNode} from './modules/dom-nodes.js'
 import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import getStream from './modules/get-stream.js'
 import html from './vendor/nanohtml-v1.2.4.js'
-import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
+import which from './commands/which.js'
 
 let token = .62
 
@@ -30,7 +30,7 @@ function done () {
 async function evaluate (command) {
   try {
     let {cmd, args, opts} = parseCommand(command)
-    let mod = await loadCommand(cmd, window.env)
+    let mod = await import(await which(null, cmd))
     let fn = mod[args[0]] ? mod[args.shift()] : mod.default
     let out = await fn(opts, ...args)
     let stream = getStream(out)

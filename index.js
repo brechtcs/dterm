@@ -1,18 +1,18 @@
 import {DTERM_HISTORY} from './modules/constants.js'
-import {DistributedFilesURL, parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {TerminalElement, ErrorElement, SandboxElement, WelcomeElement} from './modules/elements.js'
 import {createSettings, readSettings} from './modules/settings.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
 import {href} from './vendor/nanohref-v3.1.0.js'
 import {inflateNode} from './modules/dom-nodes.js'
 import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import {parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import control from './modules/controller.js'
 import getStream from './modules/get-stream.js'
-import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
 
 const params = new URLSearchParams(window.location.search)
 const term = control('main')
+term.use(globals)
 term.use(init)
 term.use(render)
 term.use(focus)
@@ -21,7 +21,7 @@ term.use(sandbox)
 term.use(keyboard)
 term.use(history)
 term.use(menu)
-term.use(links)
+term.use(navigation)
 term.use(debug)
 term.view(TerminalElement)
 term.mount()
@@ -29,24 +29,46 @@ term.mount()
 /**
  * Handlers
  */
-async function init (state, emitter) {
+function globals (state) {
   state.cwd = null
   state.env = null
-  state.prompt = false
 
-  emitter.on('term:location', function (cwd) {
-    if (cwd instanceof DistributedFilesURL) {
+  Object.defineProperty(window, 'cwd', {
+    get () {
+      return state.cwd
+    },
+    set (cwd) {
+      state.cwd = parseUrl(cwd)
       window.history.pushState({}, null, cwd.pathname + window.location.search)
-      state.cwd = cwd
-    } else {
-      throw new Error('Illegal state: invalid working directory')
+      window.cwd.archive.getInfo().then(setTitle).catch(console.error)
     }
   })
 
+  Object.defineProperty(window, 'env', {
+    get () {
+      return state.env
+    },
+    set (env) {
+      if (state.env) throw new Error('Cannot overwrite window.env')
+      Object.freeze(env)
+      Object.freeze(env.commands)
+      Object.freeze(env.config)
+      state.env = env
+    }
+  })
+
+  function setTitle (info) {
+    document.title = info.title + ' - dterm'
+  }
+}
+
+async function init (state, emitter) {
+  state.prompt = false
+
   try {
-    state.env = await readSettings()
+    window.env = await readSettings()
   } catch (err) {
-    state.env = createSettings()
+    window.env = createSettings()
   } finally {
     emitter.emit('render')
   }
@@ -55,12 +77,10 @@ async function init (state, emitter) {
     if (window.location.pathname === '/') {
       let filters = {isOwner: true}
       let dat = await DatArchive.selectArchive({filters})
-      emitter.emit('term:location', resolveUrl(dat.url, window.location))
+      window.cwd = resolveUrl(dat.url, window.location)
     } else {
-      emitter.emit('term:location', parseUrl(window.location))
+      window.cwd = parseUrl(window.location)
     }
-    let info = await state.cwd.archive.getInfo()
-    document.title = info.title + ' - dterm'
 
     state.prompt = ''
     emitter.emit('render', {focus: true})
@@ -136,8 +156,8 @@ function commands (state, emitter) {
   })
 
   emitter.on('cmd:done', function ({cwd}) {
+    window.cwd = cwd
     state.prompt = state.prompt || ''
-    emitter.emit('term:location', parseUrl(cwd))
     emitter.emit('render', {focus: true, scroll: true})
   })
 
@@ -286,7 +306,7 @@ function menu (state, emitter) {
   })
 }
 
-function links (state, emitter) {
+function navigation (state, emitter) {
   href(function (anchor) {
     let target = parseUrl(anchor)
     emitter.emit('cmd:enter', 'cd ' + target.location)

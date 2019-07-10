@@ -1,17 +1,16 @@
 import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
 import html from '../vendor/nanohtml-v1.2.4.js'
-import publicState from '../modules/public-state.js'
 import shortenHash from '../modules/shorten-hash.js'
 
 export default async function (opts = {}, location = '') {
-  let {cwd} = publicState
+  let {cwd} = window
   let lsDir = resolveUrl(location, cwd)
   let listing = await lsDir.archive.readdir(lsDir.path, {stat: true})
 
   return listing.sort(dirsFirst).map(entry => {
     entry.url = resolveUrl(entry.name, lsDir)
-    entry.toHTML = () => listItem(entry, lsDir, opts.all || opts.a)
+    entry.toHTML = () => listItem(entry, opts.all || opts.a)
     return entry
   })
 }
@@ -28,10 +27,14 @@ function listItem (entry, all) {
 
   let name = entry.stat.isDirectory() ? html`<strong>${entry.name}</strong>` : entry.name
   let link = html`<a href=${url}>${name}</a>`
+  let el = html`<div class=${dotfile ? 'text-muted' : 'text-default'}>${link}</div>`
 
   if (entry.stat.isFile()) {
     link.setAttribute('target', '_blank')
     link.setAttribute('rel', 'noopener noreferrer')
   }
-  return html`<div class=${dotfile ? 'text-muted' : 'text-default'}>${link}</div>`
+  if (dotfile && !all) {
+    el.toggleAttribute('hidden')
+  }
+  return el
 }
