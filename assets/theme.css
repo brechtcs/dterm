@@ -1,6 +1,8 @@
-.text-default {
+.text-default,
+.text-muted {
   color: inherit;
 }
+
 .text-muted {
-  color: gray;
+  opacity: .62;
 }

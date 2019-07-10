@@ -1,6 +1,7 @@
-export const DTERM_VERSION = '0.2.0'
-export const DTERM_HOME = 'dterm-home'
-export const ENV_STORAGE_KEY = 'dterm-env'
+export const DTERM_VERSION = '0.3.0'
+
+export const DTERM_HISTORY = 'dterm-history'
+export const DTERM_SETTINGS = 'dterm-settings'
 
 export const BUILTIN_COMMANDS = [
   {name: 'dat', description: 'Create, remove, and manage dats'},
@@ -20,3 +21,7 @@ export const BUILTIN_COMMANDS = [
   {name: 'clear', description: 'Clear the visible command history'},
   {name: 'exit', description: 'Close dterm window'}
 ]
+
+// Deprecated features, keeping for compatibility
+export const DTERM_ENV = 'dterm-env'
+export const DTERM_HOME = 'dterm-home'

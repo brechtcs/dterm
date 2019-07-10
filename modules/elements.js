@@ -1,55 +1,56 @@
 import html from '../vendor/nanohtml-v1.2.4.js'
-import publicState from './public-state.js'
 import shortenHash from './shorten-hash.js'
 
-export function terminal (state, emit) {
+export function TerminalElement (state, emit) {
   return html`<main>
     <div class="output">
       ${state.entries.map(output)}
     </div>
-    ${prompt(state.public.cwd, state.public.prompt, emit)}
+    ${PromptElement(window.cwd, state.prompt, emit)}
   </main>`
 }
 
-export function error (err) {
+export function ErrorElement (err) {
   let el = html`<div class="error"></div>`
-  let header = html`<div class="error-header">${err.message}</div>`
+  let header = html`<div class="error-header">${err.description || err.message}</div>`
   let stack = html `<div class="error-stack"></div>`
-  stack.innerHTML = err.stack
-
-  header.addEventListener('click', function () {
-    el.classList.toggle('open')
-  })
+  stack.innerText = err.stack
 
   el.appendChild(header)
   el.appendChild(stack)
   return el
 }
 
-export function prompt (cwd, value, emit) {
+export function PromptElement (cwd, value, emit) {
   let interactive = !!emit
-  let home = publicState.home
-  let prompt = (cwd && cwd.key !== home.key ? `dat://${shortenHash(cwd.key)}` : '~') + (cwd && cwd.path ? '/' + cwd.path : '')
-  let input = html`<input value=${value || ''} disabled>`
+  let prompt =  cwd && `dat://${shortenHash(cwd.key)}/${cwd.path}`
+  let input = html`<input value=${value || ''} readonly>`
   let el = html`<div class="prompt">${prompt} ${input}</div>`
 
   if (value === false) el.setAttribute('hidden', '')
   if (!interactive) return el
 
   input.classList.add('interactive')
-  input.removeAttribute('disabled')
-  input.addEventListener('keyup', function (e) {
-    let action = (e.code === 'Enter')
-      ? 'cmd:enter'
-      : 'cmd:change'
-    emit(action, input.value)
+  input.removeAttribute('readonly')
+
+  input.addEventListener('keydown', function (e) {
+    if (e.code === 'Tab') {
+      e.preventDefault()
+      emit('menu:nav', {back: e.shiftKey})
+    } else if (e.code === 'Enter') {
+      emit('cmd:enter', input.value)
+    }
+  })
+
+  input.addEventListener('input', function (e) {
+    emit('cmd:change', input.value)
   })
 
   return el
 
 }
 
-export function welcome () {
+export function WelcomeElement () {
   return html`<div><strong>Welcome to dterm.</strong> Type <code>help</code> if you get lost.</div>`
 }
 
@@ -59,7 +60,7 @@ export function welcome () {
 function output (entry) {
   let out, el = html`<div class="entry"></div>`
   if (typeof entry.in === 'string') {
-    el.appendChild(prompt(entry.cwd, entry.in))
+    el.appendChild(PromptElement(entry.cwd, entry.in))
   }
   for (out of entry.out) {
     el.appendChild(content(out))

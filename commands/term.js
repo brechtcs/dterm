@@ -1,75 +1,119 @@
-import {DTERM_HOME, DTERM_VERSION, ENV_STORAGE_KEY} from '../modules/constants.js'
-import {joinPath} from 'dat://dfurl.hashbase.io/modules/path.js'
-import {resolveEntry} from 'dat://dfurl.hashbase.io/modules/entry.js'
-import {selectHome, saveHome, buildEnv} from '../modules/home-dat.js'
-import html from '../vendor/nanohtml-v1.2.4.js'
-import publicState from '../modules/public-state.js'
+import {DTERM_VERSION, DTERM_SETTINGS, DTERM_ENV} from '../modules/constants.js'
+import {StrictStorage, StrictStorageError} from '../modules/strict-storage.js'
+import {createSettings} from '../modules/settings.js'
+import {parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 
-function success () {
-  const refresh = () =>  window.location.reload()
-  return html`<div>Configuration saved. <a href="#" onclick=${refresh}>Refresh terminal to apply</a></div>`
-}
+const storage = new StrictStorage(localStorage)
 
-export default async function (opts = {}) {
+export default async function (opts = {}, path) {
   if (opts.version || opts.v) {
     return DTERM_VERSION
   }
-  if (opts.home) {
-    let home = opts.home === true
-      ? publicState.cwd.archive.url
-      : opts.home
-    localStorage.setItem(DTERM_HOME, home)
-  } else if (opts.home == false) {
-    localStorage.setItem(DTERM_HOME, false)
+  let location = path ? resolveUrl(path, window.cwd) : parseUrl(window.location.origin)
+  return location.open()
+}
+
+export async function settings (opts = {}) {
+  let settings = await readSettings()
+
+  if (opts.recover) {
+    let env = JSON.parse(storage.getItem(DTERM_ENV))
+    settings = createSettings(env)
   }
-  return success()
+
+  if (opts.file === true || opts.f === true) {
+    return storage.getItem(DTERM_SETTINGS)
+  } else if (opts.file === false) {
+    storage.removeItem(DTERM_SETTINGS)
+    return maybeReload()
+  } else if (opts.file || opts.f) {
+    let file = resolveUrl(opts.file || opts.f, window.cwd)
+    if (!(await file.isDirectory())) {
+      storage.setItem(DTERM_SETTINGS, file.location)
+    } else {
+      throw new Error('Invalid settings file: ' + file.location)
+    }
+    return saveSettings(settings, file)
+  }
+
+  return JSON.stringify(settings, null, 4)
 }
 
 export async function config (opts = {}) {
-  let opt, env = await readEnv()
+  let opt, settings = await readSettings()
 
   for (opt in opts) {
     let val = opts[opt]
     if (typeof val !== 'undefined') {
-      env.config[opt] = val
+      settings.config[opt] = val
     }
   }
-  return saveEnv(env)
+  return saveSettings(settings)
 }
 
 export async function install (opts, location, name) {
-  let {cwd, home} = publicState
-  let env = await readEnv()
-  let entry = resolveEntry(location, cwd, home)
-  env.commands[name || entry.name] = entry.location
-  return saveEnv(env)
+  let settings = await readSettings()
+  let url = resolveUrl(location, window.cwd)
+  settings.commands[name || url.name] = url.location
+  return saveSettings(settings)
 }
 
 export async function uninstall (opts, name) {
-  let env = await readEnv()
-  delete env.commands[name]
-  return saveEnv(env)
-}
-
-export function recover (opts = {}) {
-  let stored = JSON.parse(localStorage.getItem(ENV_STORAGE_KEY))
-  let env = buildEnv(stored)
-
-  if (opts.save || opts.s) {
-    return saveEnv(env)
-  }
-  return JSON.stringify(env, null, 4)
+  let settings = await readSettings()
+  delete settings.commands[name]
+  return saveSettings(settings)
 }
 
 /**
- * Private helpers
+ * Helper functions
  */
-async function readEnv () {
-  let term = await publicState.home.archive.readFile('term.json')
-  return JSON.parse(term)
+function maybeReload () {
+  if (window.env.config['autorefresh-changed-settings']) {
+    return window.location.reload()
+  }
+  return 'Settings saved. Refresh to apply changes'
 }
 
-async function saveEnv (env) {
-  await saveHome(env)
-  return success()
+async function readSettings () {
+  try {
+    let file = getSettingsFile()
+    return JSON.parse(await file.read())
+  } catch (err) {
+    if (err instanceof StrictStorageError || err.name === 'NotFoundError') {
+      return createSettings()
+    }
+    throw err
+  }
+}
+
+async function saveSettings (settings, target) {
+  let file
+
+  try {
+    file = target || getSettingsFile()
+    await file.archive.stat(file.path) // force error when parent does not exist
+    await file.write(JSON.stringify(settings, null, 4))
+    return maybeReload()
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      await file.archive.mkdir(file.parent)
+      await file.archive.writeFile(file.path, '')
+      return saveSettings(settings, file)
+    }
+    err.description = 'Could not save dterm settings to file'
+    return err
+  }
+}
+
+function getSettingsFile () {
+  try {
+    return resolveUrl(storage.getItem(DTERM_SETTINGS), window.cwd)
+  } catch (err) {
+    if (err instanceof StrictStorageError) {
+      let url = resolveUrl('/.config/term.json', window.cwd)
+      storage.setItem(DTERM_SETTINGS, url.location)
+      return url
+    }
+    throw err
+  }
 }

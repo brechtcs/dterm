@@ -1,8 +1,7 @@
-import {resolveEntry} from 'dat://dfurl.hashbase.io/modules/entry.js'
-import publicState from '../modules/public-state.js'
+import {resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
 
 export default function (opts, location) {
-  let {cwd, home} = publicState
-  let entry = resolveEntry(location, cwd, home)
-  return entry.open()
+  let {cwd} = window
+  let entry = resolveUrl(location, cwd)
+  return entry.open({raw: true})
 }

@@ -1,54 +1,103 @@
-import {DTERM_HOME} from './modules/constants.js'
-import {parseUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
-import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import {DTERM_HISTORY} from './modules/constants.js'
+import {parseUrl, resolveUrl} from 'dat://dfurl.hashbase.io/modules/url.js'
+import {TerminalElement, ErrorElement, WelcomeElement} from './modules/elements.js'
+import {createSettings, readSettings} from './modules/settings.js'
 import {glob, isGlob} from 'dat://dfurl.hashbase.io/modules/glob.js'
-import {terminal, error, welcome} from './modules/elements.js'
-import {selectHome} from './modules/home-dat.js'
+import {href} from './vendor/nanohref-v3.1.0.js'
+import {joinPath, relativePath} from 'dat://dfurl.hashbase.io/modules/path.js'
+import {sanitizeNode} from './modules/dom-nodes.js'
 import control from './modules/controller.js'
 import getStream from './modules/get-stream.js'
-import loadCommand from './modules/load-command.js'
 import parseCommand from './modules/parse-command.js'
-import publicState from './modules/public-state.js'
+import which from './commands/which.js'
 
-let term = control('main')
-term.view(terminal)
-term.use(dterm)
+const params = new URLSearchParams(window.location.search)
+const term = control('main')
+term.use(globals)
+term.use(init)
 term.use(render)
 term.use(focus)
 term.use(commands)
 term.use(keyboard)
 term.use(history)
 term.use(menu)
+term.use(navigation)
 term.use(debug)
+term.view(TerminalElement)
 term.mount()
 
 /**
  * Handlers
  */
-async function dterm (state, emitter) {
-  state.public = publicState
+function globals (state) {
+  state.cwd = null
+  state.env = null
+
+  Object.defineProperty(window, 'cwd', {
+    get () {
+      return state.cwd
+    },
+    set (cwd) {
+      state.cwd = parseUrl(cwd)
+      window.history.pushState({}, null, window.cwd.pathname + window.location.search)
+      window.cwd.archive.getInfo().then(setTitle).catch(console.error)
+    }
+  })
+
+  Object.defineProperty(window, 'env', {
+    get () {
+      return state.env
+    },
+    set (env) {
+      if (state.env) throw new Error('Cannot overwrite window.env')
+      Object.freeze(env)
+      Object.freeze(env.commands)
+      Object.freeze(env.config)
+      state.env = env
+    }
+  })
+
+  function setTitle (info) {
+    document.title = info.title + ' - dterm'
+  }
+}
+
+async function init (state, emitter) {
+  state.prompt = false
 
   try {
-    await selectHome(localStorage.getItem(DTERM_HOME))
-    state.public.cwd = parseUrl(window.location)
-    state.public.prompt = ''
-
-    let info = await state.public.cwd.archive.getInfo()
-    state.public.title = info.title
-
-    emitter.emit('render')
-    emitter.emit('focus')
+    window.env = await readSettings()
   } catch (err) {
-    emitter.emit('cmd:out', err, true)
+    window.env = createSettings()
+  } finally {
+    emitter.emit('render')
+  }
+
+  try {
+    if (window.location.pathname === '/') {
+      let filters = {isOwner: true}
+      let dat = await DatArchive.selectArchive({filters})
+      window.cwd = resolveUrl(dat.url, window.location)
+    } else {
+      window.cwd = parseUrl(window.location)
+    }
+
+    state.prompt = ''
+    emitter.emit('render', {focus: true})
+  } catch (err) {
+    err.name = 'TerminalInitError'
+    emitter.emit('cmd:out', err)
   }
 }
 
 function render (state, emitter, term) {
-  emitter.on('render', function (scroll) {
+  emitter.on('render', function (opts = {}) {
     term.render()
-    emitter.emit('focus')
 
-    if (scroll) {
+    if (opts.focus) {
+      emitter.emit('focus')
+    }
+    if (opts.scroll) {
       window.scrollTo(0, document.body.scrollHeight)
     }
   })
@@ -56,7 +105,6 @@ function render (state, emitter, term) {
 
 function focus (state, emitter) {
   emitter.on('focus', setFocus)
-  document.addEventListener('keydown', setFocus, {capture: true})
   window.addEventListener('focus', setFocus)
 
   function setFocus () {
@@ -69,17 +117,17 @@ function commands (state, emitter) {
   state.entries = [{
     cwd: null,
     in: null,
-    out: [welcome()]
+    out: [WelcomeElement()]
   }]
 
   emitter.on('cmd:change', function (cmd) {
-    state.public.prompt = cmd
+    state.prompt = cmd
   })
 
   emitter.on('cmd:enter', function (cmd) {
-    state.public.prompt = false
+    state.prompt = false
     state.entries.push({
-      cwd: state.public.cwd,
+      cwd: window.cwd,
       in: cmd,
       out: []
     })
@@ -91,7 +139,7 @@ function commands (state, emitter) {
   emitter.on('cmd:eval', async function (command) {
     try {
       let {cmd, args, opts} = parseCommand(command)
-      let mod = await loadCommand(cmd, window.location.pathname)
+      let mod = await import(await which(null, cmd))
       let fn = mod[args[0]] ? mod[args.shift()] : mod.default
       let out = await fn(opts, ...args)
       let stream = getStream(out)
@@ -123,21 +171,23 @@ function commands (state, emitter) {
     if (typeof output === 'undefined') {
       output = ''
     } else if (output instanceof Error) {
-      output = error(output)
+      output = ErrorElement(output)
     } else if (typeof output.toHTML === 'function') {
       output = output.toHTML()
     } else if (typeof output !== 'string' && !(output instanceof Element)) {
       output = JSON.stringify(output).replace(/^"|"$/g, '')
     }
 
+    if (output instanceof Element) {
+      output = sanitizeNode(output)
+    }
     state.entries[state.entries.length - 1].out.push(output)
-    emitter.emit('render', true)
+    emitter.emit('render', {scroll: true})
   })
 
   emitter.on('cmd:done', function () {
-    state.public.prompt = state.public.prompt || ''
-    state.public.cwd = parseUrl(window.location)
-    emitter.emit('render', true)
+    state.prompt = state.prompt || ''
+    emitter.emit('render', {focus: true, scroll: true})
   })
 
   emitter.on('cmd:clear', function () {
@@ -156,13 +206,6 @@ function commands (state, emitter) {
 
 function keyboard (state, emitter) {
   document.addEventListener('keydown', function (e) {
-    if (e.code === 'Tab') {
-      e.preventDefault()
-      emitter.emit('menu:nav', e.shiftKey)
-    } else if (!e.shiftKey) {
-      emitter.emit('menu:reset')
-    }
-
     if (e.code === 'KeyL' && e.ctrlKey) {
       e.preventDefault()
       emitter.emit('cmd:clear')
@@ -172,59 +215,73 @@ function keyboard (state, emitter) {
     } else if (e.code === 'ArrowDown') {
       e.preventDefault()
       emitter.emit('hist:down')
-    } else if (e.code === 'Escape' || e.code === 'KeyC' && e.ctrlKey) {
+    } else if (e.code === 'Escape') {
       e.preventDefault()
       emitter.emit('hist:reset')
+    } else if (!isModifier(e)) {
+      emitter.emit('focus')
     }
   }, {capture: true})
+
+  function isModifier (e) {
+    return e.altKey || e.ctrlKey || e.metaKey || e.shiftKey
+  }
 }
 
 function history (state, emitter) {
-  state.history = []
-  state.history.cursor = -1
+  state.history = readHistory() || []
+  state.history.cursor = state.history.length || -1
 
   emitter.on('cmd:enter', function (cmd) {
-    if (cmd) state.history.push(cmd)
+    let last = state.history[state.history.length - 1]
+
+    if (cmd && cmd !== last) {
+      state.history.push(cmd)
+      storeHistory()
+    }
     state.history.cursor = state.history.length
   })
 
   emitter.on('hist:up', function () {
     if (state.history.cursor === -1) return ''
     state.history.cursor = Math.max(0, state.history.cursor - 1)
-    state.public.prompt = state.history[state.history.cursor]
+    state.prompt = state.history[state.history.cursor]
     emitter.emit('render')
   })
 
   emitter.on('hist:down', function () {
     state.history.cursor = Math.min(state.history.length, state.history.cursor + 1)
-    state.public.prompt = state.history[state.history.cursor] || ''
+    state.prompt = state.history[state.history.cursor] || ''
     emitter.emit('render')
   })
 
   emitter.on('hist:reset', function () {
     state.history.cursor = state.history.length
-    state.public.prompt = ''
+    state.prompt = ''
     emitter.emit('render')
   })
+
+  function readHistory () {
+    return JSON.parse(sessionStorage.getItem(DTERM_HISTORY))
+  }
+
+  function storeHistory () {
+    let hist = JSON.stringify(state.history.slice(-12))
+    return sessionStorage.setItem(DTERM_HISTORY, hist)
+  }
 }
 
 function menu (state, emitter) {
   state.menu = {cursor: -1}
 
-  emitter.on('menu:nav', async function (back) {
-    if (!state.public.cwd || state.public.prompt.indexOf(' ') < 0) {
+  emitter.on('menu:nav', async function (opts = {}) {
+    if (!window.cwd || state.prompt.indexOf(' ') < 0) {
       return
     }
-    let {archive, path} = state.public.cwd
-    let parts = state.public.prompt.split(' ')
+    let {archive, path} = window.cwd
+    let parts = state.prompt.split(' ')
     let last = parts.pop()
     let pattern = isGlob(last) ? last : last + '*'
-
-    if (last.startsWith('~')) {
-      archive = state.public.home.archive
-      path = state.public.home.path
-      pattern = pattern.slice(1).replace(/^\//, '')
-    }
 
     if (state.menu.cursor < 0) {
       let menu = await glob(archive, {
@@ -235,22 +292,37 @@ function menu (state, emitter) {
       state.menu.items = menu.map(item => relativePath(path, item)).sort()
     }
 
-    let cursor = back ? (state.menu.cursor - 1) : (state.menu.cursor + 1)
+    let cursor = opts.back ? (state.menu.cursor - 1) : (state.menu.cursor + 1)
     let item = state.menu.items[cursor]
 
     if (item) {
-      item = last.startsWith('~') ? '~/' + item : item
       state.menu.cursor = cursor
-      state.public.prompt = parts.join(' ') + ' ' + item
+      state.prompt = parts.join(' ') + ' ' + item
       emitter.emit('render')
     }
   })
 
-  emitter.on('menu:reset', function () {
+  emitter.on('cmd:change', function () {
     state.menu = {cursor: -1}
   })
 }
 
-function debug () {
+function navigation (state, emitter) {
+  href(function (anchor) {
+    let target = parseUrl(anchor)
+    emitter.emit('cmd:enter', 'cd ' + target.location)
+  })
+}
+
+function debug (state, emitter) {
+  if (!params.get('debug')) return
+
+  emitter.on('*', function (name, ...args) {
+    console.groupCollapsed(name)
+    console.warn('Trace')
+    args.forEach(console.dir)
+    console.groupEnd()
+  })
+
   window.term = term
 }
