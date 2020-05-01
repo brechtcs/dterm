@@ -1,5 +1,7 @@
 # dterm
 
+**DEPRECATED:** The next version of [Beaker Browser](https://beakerbrowser.com) will ship with a builtin terminal, which will give a much better experience than any userland implementation. 
+
 Distributed terminal, forked from [Webterm](https://github.com/pfrazee/webterm).
 
 ## Why?
